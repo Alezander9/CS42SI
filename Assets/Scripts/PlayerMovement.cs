@@ -1,8 +1,7 @@
 // Core movement system implementing Celeste-style mechanics including walk, jump, wall interactions, and dash.
-// Features coyote time, jump buffering, wall sliding/climbing/jumping, and platform integration for smooth, responsive control.
+// Features coyote time, jump buffering, wall sliding/climbing/jumping for smooth, responsive control.
 
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerCollision))]
@@ -56,8 +55,6 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 _furthestPoint;
     private float _horizontalSpeed;
     private float _verticalSpeed;
-    private float _externalHorizontalSpeed;
-    private float _externalVerticalSpeed;
     private float _jumpBufferTimeLeft;
     private float _coyoteJumpTimeLeft;
     private float _wallStickTimeLeft;
@@ -68,7 +65,6 @@ public class PlayerMovement : MonoBehaviour
     private bool _dashJustEnded;
     private bool _canDash = false;
     private bool _canLand = false;
-    private Dictionary<GameObject, PlatformController> _platforms = new Dictionary<GameObject, PlatformController>();
 
     private Transform _transform;
     private PlayerCollision _playerCollision;
@@ -123,8 +119,6 @@ public class PlayerMovement : MonoBehaviour
         HandleWallMovement();
 
         Dash();
-
-        HandleExternalForces();
 
         ClampSpeedY();
 
@@ -429,50 +423,6 @@ public class PlayerMovement : MonoBehaviour
 
     #endregion
 
-    #region External forces
-
-    private void HandleExternalForces()
-    {
-        Platforms();
-    }
-
-    private void Platforms()
-    {
-        GameObject obj;
-        PlatformController platform;
-        var coll = _playerCollision.OverlapPlatform(out obj);
-        _externalHorizontalSpeed = 0;
-        _externalVerticalSpeed = 0;
-
-        if (!coll)
-            return;
-
-        if(!_platforms.ContainsKey(obj))
-        {
-            platform = obj.GetComponent<PlatformController>();
-            _platforms.Add(obj, platform);
-        }
-
-        platform = _platforms[obj];
-
-        // Check if platform has PlatformController component
-        if (platform == null)
-        {
-            Debug.LogWarning($"GameObject '{obj.name}' on Platform layer is missing PlatformController component!");
-            return;
-        }
-
-        if (!_playerCollision.DownCollision.Colliding && _verticalSpeed == 0 && _playerCollision.PlatformDownCollision.RayHit)
-            _playerCollision.ForceVerticalReposition(_playerCollision.DownCollision);
-
-        var rawVelocity = platform.GetRawVelocity();
-        _externalHorizontalSpeed = rawVelocity.x;
-        _externalVerticalSpeed = _rawMovement.y;
-        _canLand = false;
-    }
-
-    #endregion
-
     private void ClampSpeedY()
     {
         if(_verticalSpeed < 0)
@@ -483,11 +433,10 @@ public class PlayerMovement : MonoBehaviour
     {
         var pos = _transform.position;
         _rawMovement = new Vector2(_horizontalSpeed, _verticalSpeed);
-        var totalMovement = new Vector2(_rawMovement.x + _externalHorizontalSpeed, _rawMovement.y + _externalVerticalSpeed);
-        var move = totalMovement * Time.deltaTime;
+        var move = _rawMovement * Time.deltaTime;
         _furthestPoint = (Vector2)pos + move;
 
-        _playerCollision.HandleCollisions(_furthestPoint, ref move, totalMovement);
+        _playerCollision.HandleCollisions(_furthestPoint, ref move, _rawMovement);
 
         _transform.position += (Vector3)move;
     }

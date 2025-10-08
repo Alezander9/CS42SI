@@ -1,5 +1,5 @@
-// Handles precise raycast-based collision detection for the player with walls, ground, and platforms.
-// Provides collision info for all directions and manages interaction with interactable objects.
+// Handles precise raycast-based collision detection for the player with walls and ground.
+// Provides collision info for all directions.
 
 using System;
 using UnityEngine;
@@ -58,7 +58,6 @@ public class PlayerCollision : MonoBehaviour
     [HideInInspector] public CollisionInfo UpCollision;
     [HideInInspector] public CollisionInfo RightCollision;
     [HideInInspector] public CollisionInfo LeftCollision;
-    [HideInInspector] public CollisionInfo PlatformDownCollision;
 
     [Range(0.1f, 0.5f)]
     [SerializeField] private float _skinWidth = 0.15f;
@@ -71,9 +70,7 @@ public class PlayerCollision : MonoBehaviour
     [Range(0.05f, 2)]
     [SerializeField] private float _rayLengthModifier = 0.05f;
     [SerializeField] private float _dashHitRadius = 0.25f;
-    [SerializeField] private float _platformCollRadius = 0.8f;
     [SerializeField] private LayerMask _collisionMask;
-    [SerializeField] private LayerMask _platformMask;
 
     private Transform _transform;
     private Bounds _bounds;
@@ -97,7 +94,6 @@ public class PlayerCollision : MonoBehaviour
     {
         var spacing = GetRaySpacings();
 
-        PlatformDownCollision.RaycastInfo = new RaycastInfo(Vector2.zero, _verticalMinRayLength, Vector2.down, spacing.y, Vector2.right);
         DownCollision.RaycastInfo = new RaycastInfo(Vector2.zero, _verticalMinRayLength, Vector2.down, spacing.y, Vector2.right);
         UpCollision.RaycastInfo = new RaycastInfo(Vector2.zero, _verticalMinRayLength, Vector2.up, spacing.y, Vector2.right);
         RightCollision.RaycastInfo = new RaycastInfo(Vector2.zero, _horizontalMinRayLength, Vector2.right, spacing.x, Vector2.up);
@@ -107,14 +103,6 @@ public class PlayerCollision : MonoBehaviour
     public bool IsVerticallyColliding()
     {
         return DownCollision.Colliding || UpCollision.Colliding;
-    }
-
-    public bool OverlapPlatform(out GameObject gameObject)
-    {
-        var hit = Physics2D.OverlapCircle(_transform.position, _platformCollRadius, _platformMask);
-        gameObject = hit ? hit.gameObject : null;
-
-        return hit;
     }
 
     public bool IsOverlapBox(Vector2 point, Vector2 size)
@@ -190,7 +178,6 @@ public class PlayerCollision : MonoBehaviour
         CollisionDetection(ref LeftCollision, rawMovement, false, _collisionMask);
         CollisionDetection(ref UpCollision, rawMovement, false, _collisionMask);
         CollisionDetection(ref DownCollision, rawMovement, true, _collisionMask);
-        CollisionDetection(ref PlatformDownCollision, rawMovement, true, _platformMask);
 
         HandleHorizontalCollision(RightCollision, moveDir.x, furthestPoint, ref move);
         HandleHorizontalCollision(LeftCollision, moveDir.x, furthestPoint, ref move);
@@ -290,7 +277,6 @@ public class PlayerCollision : MonoBehaviour
     {
         UpdateBounds();
 
-        PlatformDownCollision.RaycastInfo.StartPoint = new Vector2(_bounds.min.x, _bounds.min.y);
         DownCollision.RaycastInfo.StartPoint = new Vector2(_bounds.min.x, _bounds.min.y);
         UpCollision.RaycastInfo.StartPoint = new Vector2(_bounds.min.x, _bounds.max.y);
         RightCollision.RaycastInfo.StartPoint = new Vector2(_bounds.max.x, _bounds.min.y);
@@ -315,7 +301,6 @@ public class PlayerCollision : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(transform.position, _bounds.size);
-        Gizmos.DrawWireSphere(transform.position, _platformCollRadius);
     }
 }
 
