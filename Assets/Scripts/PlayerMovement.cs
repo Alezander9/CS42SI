@@ -66,6 +66,10 @@ public class PlayerMovement : MonoBehaviour
     private bool _dashJustEnded;
     private bool _canDash = false;
     private bool _canLand = false;
+    
+    // Debug logging
+    private float _debugLogTimer = 0f;
+    private const float DEBUG_LOG_INTERVAL = 0.5f; // Log twice per second
 
     private Transform _transform;
     private Rigidbody2D _rb;
@@ -131,6 +135,26 @@ public class PlayerMovement : MonoBehaviour
         ClampSpeedY();
 
         Move();
+        
+        // Periodic debug logging
+        DebugLogPositionAndVelocity();
+    }
+    
+    private void DebugLogPositionAndVelocity()
+    {
+        _debugLogTimer += Time.deltaTime;
+        
+        if (_debugLogTimer >= DEBUG_LOG_INTERVAL)
+        {
+            print($"[TEMPLOG] Periodic - Position: {_transform.position}, Velocity: ({_horizontalSpeed:F2}, {_verticalSpeed:F2}), IsOnWall: {IsOnWall()}");
+            _debugLogTimer = 0f;
+        }
+    }
+    
+    private void LogMovementFunction(string functionName, float hSpeedBefore, float vSpeedBefore, float hSpeedAfter, float vSpeedAfter, string extraInfo = "")
+    {
+        string extra = string.IsNullOrEmpty(extraInfo) ? "" : $" | {extraInfo}";
+        print($"[TEMPLOG] {functionName} - H: {hSpeedBefore:F2} → {hSpeedAfter:F2}, V: {vSpeedBefore:F2} → {vSpeedAfter:F2}{extra}");
     }
 
     public Vector2 GetVelocity()
@@ -185,6 +209,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnJumpPressed()
     {
+        print($"[TEMPLOG] OnJumpPressed - IsOnWall={IsOnWall()}, V={_verticalSpeed:F2}, canWallJump={_canWallJump}");
         _jumpBufferTimeLeft = _jumpBuffer;
         _wallGrabJumpTimer = _wallGrabJumpApexTime;
 
@@ -206,11 +231,17 @@ public class PlayerMovement : MonoBehaviour
         }
 
         if (CanJump() && downColl)
+        {
+            float vBefore = _verticalSpeed;
             _verticalSpeed = _maxJumpSpeed;
+            LogMovementFunction("Jump(ground)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"maxJumpSpeed={_maxJumpSpeed:F2}");
+        }
 
         if (CanJump() && CanCoyoteJump())
         {
+            float vBefore = _verticalSpeed;
             _verticalSpeed = _maxJumpSpeed;
+            LogMovementFunction("Jump(coyote)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"maxJumpSpeed={_maxJumpSpeed:F2}");
             _coyoteJumpTimeLeft = 0;
         }
     }
@@ -218,7 +249,11 @@ public class PlayerMovement : MonoBehaviour
     private void OnJumpReleased()
     {
         if(_verticalSpeed > _minJumpSpeed)
+        {
+            float vBefore = _verticalSpeed;
             _verticalSpeed = _minJumpSpeed;
+            LogMovementFunction("OnJumpReleased", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"minJumpSpeed={_minJumpSpeed:F2}");
+        }
     }
 
     private void CoyoteJump()
@@ -322,8 +357,11 @@ public class PlayerMovement : MonoBehaviour
         {
             if(_playerInput.IsJumpPressed() && _canWallJump && collision.LastHit)
             {
+                float hBefore = _horizontalSpeed;
+                float vBefore = _verticalSpeed;
                 _horizontalSpeed = _wallJump.x * -collision.RaycastInfo.RayDirection.x;
                 _verticalSpeed = _wallJump.y;
+                LogMovementFunction("WallJump", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJump=({_wallJump.x:F2}, {_wallJump.y:F2})");
                 _wallStickTimeLeft = _wallStickTime;
                 _canWallJump = false;
             }
@@ -340,15 +378,20 @@ public class PlayerMovement : MonoBehaviour
             {
                 if (collision.RaycastInfo.RayDirection.x != input)
                 {
+                    float hBefore = _horizontalSpeed;
+                    float vBefore = _verticalSpeed;
                     _horizontalSpeed = _wallJump.x * input;
                     _verticalSpeed = _wallJump.y;
+                    LogMovementFunction("WallGrabJump(off)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJump=({_wallJump.x:F2}, {_wallJump.y:F2})");
                     return;
                 }
             }
             
             if (_playerInput.IsJumpPressed() && _wallGrabJumpTimer > 0)
             {
+                float vBefore = _verticalSpeed;
                 _verticalSpeed = _wallGrabJumpSpeed;
+                LogMovementFunction("WallGrabJump(up)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"wallGrabJumpSpeed={_wallGrabJumpSpeed:F2}");
             }
         }
     }
@@ -364,8 +407,11 @@ public class PlayerMovement : MonoBehaviour
         {
             if(collision.FirstHit && collision.HitCount == 1)
             {
+                float hBefore = _horizontalSpeed;
+                float vBefore = _verticalSpeed;
                 _verticalSpeed = _topEdgeClimbJump.y;
                 _horizontalSpeed = _topEdgeClimbJump.x * collision.RaycastInfo.RayDirection.x;
+                LogMovementFunction("WallGrab(edgeClimb)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"topEdgeClimbJump=({_topEdgeClimbJump.x:F2}, {_topEdgeClimbJump.y:F2})");
                 return;
             }
 
@@ -406,7 +452,9 @@ public class PlayerMovement : MonoBehaviour
         {
             if(!_dashJustEnded)
             {
+                float vBefore = _verticalSpeed;
                 _verticalSpeed = _ySpeedAfterDash * inputY;
+                LogMovementFunction("Dash(end)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"ySpeedAfterDash={_ySpeedAfterDash:F2}, inputY={inputY:F2}");
                 _dashJustEnded = true;
             }
 
@@ -418,8 +466,11 @@ public class PlayerMovement : MonoBehaviour
         var distance = Vector2.Distance(_transform.position, hit);
         var clampDistance = Mathf.Clamp(distance, 0, _dashDistance);
         var velocity = clampDistance / _dashDuration * dir;
+        float hBefore = _horizontalSpeed;
+        float vBefore2 = _verticalSpeed;
         _horizontalSpeed = velocity.x;
         _verticalSpeed = velocity.y;
+        LogMovementFunction("Dash(active)", hBefore, vBefore2, _horizontalSpeed, _verticalSpeed, $"dir=({dir.x:F2}, {dir.y:F2}), dist={clampDistance:F2}");
         _canDash = false;
         _dashJustEnded = false;
     }
