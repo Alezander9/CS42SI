@@ -234,15 +234,18 @@ public class PlayerMovement : MonoBehaviour
         {
             float vBefore = _verticalSpeed;
             _verticalSpeed = _maxJumpSpeed;
-            LogMovementFunction("Jump(ground)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"maxJumpSpeed={_maxJumpSpeed:F2}");
+            LogMovementFunction("Jump(ground)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"maxJumpSpeed={_maxJumpSpeed:F2}, jumpBuffer={_jumpBufferTimeLeft:F3}");
+            _jumpBufferTimeLeft = 0; // Consume jump buffer
+            return; // Don't check coyote jump if we already jumped from ground
         }
 
         if (CanJump() && CanCoyoteJump())
         {
             float vBefore = _verticalSpeed;
             _verticalSpeed = _maxJumpSpeed;
-            LogMovementFunction("Jump(coyote)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"maxJumpSpeed={_maxJumpSpeed:F2}");
+            LogMovementFunction("Jump(coyote)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"maxJumpSpeed={_maxJumpSpeed:F2}, jumpBuffer={_jumpBufferTimeLeft:F3}");
             _coyoteJumpTimeLeft = 0;
+            _jumpBufferTimeLeft = 0; // Consume jump buffer
         }
     }
 
@@ -364,6 +367,7 @@ public class PlayerMovement : MonoBehaviour
                 LogMovementFunction("WallJump", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJump=({_wallJump.x:F2}, {_wallJump.y:F2})");
                 _wallStickTimeLeft = _wallStickTime;
                 _canWallJump = false;
+                _jumpBufferTimeLeft = 0; // Consume jump buffer
             }
         }
     }
@@ -372,26 +376,27 @@ public class PlayerMovement : MonoBehaviour
     {
         _wallGrabJumpTimer -= Time.deltaTime;
 
-        if (CanGrab() && collision != null)
+        if (CanGrab() && collision != null && _playerInput.IsJumpPressed())
         {
-            if(_playerInput.IsJumpPressed() && input != 0)
+            // Priority 1: Jump OFF the wall (away from wall)
+            if(input != 0 && collision.RaycastInfo.RayDirection.x != input)
             {
-                if (collision.RaycastInfo.RayDirection.x != input)
-                {
-                    float hBefore = _horizontalSpeed;
-                    float vBefore = _verticalSpeed;
-                    _horizontalSpeed = _wallJump.x * input;
-                    _verticalSpeed = _wallJump.y;
-                    LogMovementFunction("WallGrabJump(off)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJump=({_wallJump.x:F2}, {_wallJump.y:F2})");
-                    return;
-                }
+                float hBefore = _horizontalSpeed;
+                float vBefore = _verticalSpeed;
+                _horizontalSpeed = _wallJump.x * input;
+                _verticalSpeed = _wallJump.y;
+                LogMovementFunction("WallGrabJump(off)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJump=({_wallJump.x:F2}, {_wallJump.y:F2})");
+                _jumpBufferTimeLeft = 0; // Consume jump buffer
+                return;
             }
             
-            if (_playerInput.IsJumpPressed() && _wallGrabJumpTimer > 0)
+            // Priority 2: Small jump UP while still on wall
+            if (_wallGrabJumpTimer > 0)
             {
                 float vBefore = _verticalSpeed;
                 _verticalSpeed = _wallGrabJumpSpeed;
                 LogMovementFunction("WallGrabJump(up)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"wallGrabJumpSpeed={_wallGrabJumpSpeed:F2}");
+                _jumpBufferTimeLeft = 0; // Consume jump buffer
             }
         }
     }
