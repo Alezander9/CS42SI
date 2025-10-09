@@ -5,6 +5,7 @@ using System;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerCollision))]
+[RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
 {
     public event Action OnDash;
@@ -67,6 +68,7 @@ public class PlayerMovement : MonoBehaviour
     private bool _canLand = false;
 
     private Transform _transform;
+    private Rigidbody2D _rb;
     private PlayerCollision _playerCollision;
     private PlayerInput _playerInput;
 
@@ -75,6 +77,12 @@ public class PlayerMovement : MonoBehaviour
         _transform = transform;
         _playerCollision = GetComponent<PlayerCollision>();
         _playerInput = GetComponent<PlayerInput>();
+        
+        // Set up Rigidbody2D as kinematic for physics interactions without affecting movement
+        _rb = GetComponent<Rigidbody2D>();
+        _rb.bodyType = RigidbodyType2D.Kinematic;
+        _rb.useFullKinematicContacts = true;
+        _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
     }
 
     private void Start()
