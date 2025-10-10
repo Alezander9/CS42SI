@@ -4,9 +4,9 @@
 using System;
 using UnityEngine;
 
-[RequireComponent(typeof(PlayerCollision))]
+[RequireComponent(typeof(CharacterCollision))]
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerMovement : MonoBehaviour
+public class CharacterController : MonoBehaviour
 {
     public event Action OnDash;
     public event Action OnJump;
@@ -34,7 +34,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _grabDistance = 0.2f;
     [SerializeField] private float _wallGrabJumpApexTime = 0.15f;
     [SerializeField] private Vector2 _topEdgeClimbJump = new Vector2(6, 10);
-    [SerializeField] private Vector2 _wallJump = new Vector2(12, 30);
+    [SerializeField] private Vector2 _wallJump = new Vector2(12, 20);
 
     [Header("Dash")]
     [SerializeField] private float _dashDistance = 3f;
@@ -82,14 +82,13 @@ public class PlayerMovement : MonoBehaviour
 
     private Transform _transform;
     private Rigidbody2D _rb;
-    private PlayerCollision _playerCollision;
-    private PlayerInput _playerInput;
+    private CharacterCollision _playerCollision;
+    private ICharacterInput _characterInput;
 
     private void Awake()
     {
         _transform = transform;
-        _playerCollision = GetComponent<PlayerCollision>();
-        _playerInput = GetComponent<PlayerInput>();
+        _playerCollision = GetComponent<CharacterCollision>();
         
         // Set up Rigidbody2D as kinematic for physics interactions without affecting movement
         _rb = GetComponent<Rigidbody2D>();
@@ -104,14 +103,24 @@ public class PlayerMovement : MonoBehaviour
 
     private void Start()
     {
+        // Get input component (may be added at runtime by spawner)
+        _characterInput = GetComponent<ICharacterInput>();
+        
+        if (_characterInput == null)
+        {
+            Debug.LogError("CharacterController requires a component implementing ICharacterInput (e.g., PlayerInput, RecordedInput, AIInput)");
+            enabled = false;
+            return;
+        }
+        
         _lastPosition = _transform.position;
 
         SetGravity();
         SetJumpSpeed();
 
-        _playerInput.onJumpPressed += OnJumpPressed;
-        _playerInput.onJumpReleased += OnJumpReleased;
-        _playerInput.onDashPressed += OnDashPressed;
+        _characterInput.onJumpPressed += OnJumpPressed;
+        _characterInput.onJumpReleased += OnJumpReleased;
+        _characterInput.onDashPressed += OnDashPressed;
     }
 
     #region Start Functions
@@ -133,10 +142,10 @@ public class PlayerMovement : MonoBehaviour
     private void Update()
     {
         // Poll input every frame for responsiveness
-        _inputHorizontal = _playerInput.GetHorizontalInput();
-        _inputVertical = _playerInput.GetVerticalInput();
-        _inputJumpHeld = _playerInput.IsJumpPressed();
-        _inputGrabPressed = _playerInput.IsGrabPressed();
+        _inputHorizontal = _characterInput.GetHorizontalInput();
+        _inputVertical = _characterInput.GetVerticalInput();
+        _inputJumpHeld = _characterInput.IsJumpPressed();
+        _inputGrabPressed = _characterInput.IsGrabPressed();
     }
 
     private void FixedUpdate()
@@ -569,9 +578,12 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnDestroy()
     {
-        _playerInput.onJumpPressed -= OnJumpPressed;
-        _playerInput.onJumpReleased -= OnJumpReleased;
-        _playerInput.onDashPressed -= OnDashPressed;
+        if (_characterInput != null)
+        {
+            _characterInput.onJumpPressed -= OnJumpPressed;
+            _characterInput.onJumpReleased -= OnJumpReleased;
+            _characterInput.onDashPressed -= OnDashPressed;
+        }
     }
 }
 

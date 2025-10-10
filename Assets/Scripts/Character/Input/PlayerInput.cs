@@ -1,11 +1,11 @@
-// Handles all player input using Unity's Input System and provides events for movement actions.
-// Manages jump, dash, grab, and directional inputs with proper event subscription cleanup.
+// Player input implementation using Unity's Input System.
+// Implements ICharacterInput to allow CharacterController to work with player input.
 
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System;
 
-public class PlayerInput : MonoBehaviour
+public class PlayerInput : MonoBehaviour, ICharacterInput
 {
     public event Action onJumpPressed;
     public event Action onJumpReleased;
