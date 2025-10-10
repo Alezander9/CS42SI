@@ -67,6 +67,15 @@ public class PlayerMovement : MonoBehaviour
     private bool _canDash = false;
     private bool _canLand = false;
     
+    // Input state variables (sampled in Update, used in FixedUpdate)
+    private float _inputHorizontal;
+    private float _inputVertical;
+    private bool _inputJumpPressed;
+    private bool _inputGrabPressed;
+    private bool _inputJumpHeld;
+    private bool _inputJumpReleased;
+    private bool _inputDashPressed;
+    
     // Debug logging
     private float _debugLogTimer = 0f;
     private const float DEBUG_LOG_INTERVAL = 0.5f; // Log twice per second
@@ -87,6 +96,10 @@ public class PlayerMovement : MonoBehaviour
         _rb.bodyType = RigidbodyType2D.Kinematic;
         _rb.useFullKinematicContacts = true;
         _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        
+        // Lock fixed timestep for deterministic physics
+        Time.fixedDeltaTime = 1f / 60f; // 60Hz physics
+        Time.maximumDeltaTime = Time.fixedDeltaTime; // Prevent physics spiral of death
     }
 
     private void Start()
@@ -119,6 +132,18 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
+        // Poll input every frame for responsiveness
+        _inputHorizontal = _playerInput.GetHorizontalInput();
+        _inputVertical = _playerInput.GetVerticalInput();
+        _inputJumpHeld = _playerInput.IsJumpPressed();
+        _inputGrabPressed = _playerInput.IsGrabPressed();
+    }
+
+    private void FixedUpdate()
+    {
+        // Process buffered input events
+        ProcessInputEvents();
+        
         CalculateVelocity();
 
         CalculateGravity();
@@ -138,6 +163,52 @@ public class PlayerMovement : MonoBehaviour
         
         // Periodic debug logging
         DebugLogPositionAndVelocity();
+        
+        // Clear one-frame input flags
+        ClearInputFlags();
+    }
+    
+    private void ProcessInputEvents()
+    {
+        // Process jump press event
+        if (_inputJumpPressed)
+        {
+            print($"[TEMPLOG] OnJumpPressed - IsOnWall={IsOnWall()}, V={_verticalSpeed:F2}, canWallJump={_canWallJump}");
+            _jumpBufferTimeLeft = _jumpBuffer;
+            _wallGrabJumpTimer = _wallGrabJumpApexTime;
+
+            if(IsOnWall())
+                _canWallJump = true;
+        }
+        
+        // Process jump release event
+        if (_inputJumpReleased)
+        {
+            if(_verticalSpeed > _minJumpSpeed)
+            {
+                float vBefore = _verticalSpeed;
+                _verticalSpeed = _minJumpSpeed;
+                LogMovementFunction("OnJumpReleased", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"minJumpSpeed={_minJumpSpeed:F2}");
+            }
+        }
+        
+        // Process dash press event
+        if (_inputDashPressed)
+        {
+            if(_canDash)
+            {
+                _dashTimer = _dashDuration;
+                OnDash?.Invoke();
+            }
+        }
+    }
+    
+    private void ClearInputFlags()
+    {
+        // Clear one-frame input events after processing
+        _inputJumpPressed = false;
+        _inputJumpReleased = false;
+        _inputDashPressed = false;
     }
     
     private void DebugLogPositionAndVelocity()
@@ -176,14 +247,14 @@ public class PlayerMovement : MonoBehaviour
 
     private void CalculateVelocity()
     {
-        _velocity = ((Vector2)_transform.position - _lastPosition) / Time.deltaTime;
+        _velocity = ((Vector2)_transform.position - _lastPosition) / Time.fixedDeltaTime;
         _lastPosition = _transform.position;
     }
 
     private void CalculateGravity()
     {
         if (!_playerCollision.DownCollision.Colliding && !CanCoyoteJump())
-            _verticalSpeed -= _gravity * Time.deltaTime;
+            _verticalSpeed -= _gravity * Time.fixedDeltaTime;
 
         if (_playerCollision.IsVerticallyColliding())
             _verticalSpeed = 0;
@@ -195,12 +266,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void Walk()
     {
-        var input = _playerInput.GetHorizontalInput();
-
-        if (input != 0)
-            _horizontalSpeed = Mathf.MoveTowards(_horizontalSpeed, _maxMove * input, _acceleration * Time.deltaTime);
+        if (_inputHorizontal != 0)
+            _horizontalSpeed = Mathf.MoveTowards(_horizontalSpeed, _maxMove * _inputHorizontal, _acceleration * Time.fixedDeltaTime);
         else
-            _horizontalSpeed = Mathf.MoveTowards(_horizontalSpeed, 0, _deceleration * Time.deltaTime);
+            _horizontalSpeed = Mathf.MoveTowards(_horizontalSpeed, 0, _deceleration * Time.fixedDeltaTime);
     }
 
     #endregion
@@ -209,12 +278,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnJumpPressed()
     {
-        print($"[TEMPLOG] OnJumpPressed - IsOnWall={IsOnWall()}, V={_verticalSpeed:F2}, canWallJump={_canWallJump}");
-        _jumpBufferTimeLeft = _jumpBuffer;
-        _wallGrabJumpTimer = _wallGrabJumpApexTime;
-
-        if(IsOnWall())
-            _canWallJump = true;
+        // Set flag for FixedUpdate to process
+        _inputJumpPressed = true;
     }
 
     private void Jump()
@@ -251,12 +316,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnJumpReleased()
     {
-        if(_verticalSpeed > _minJumpSpeed)
-        {
-            float vBefore = _verticalSpeed;
-            _verticalSpeed = _minJumpSpeed;
-            LogMovementFunction("OnJumpReleased", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"minJumpSpeed={_minJumpSpeed:F2}");
-        }
+        // Set flag for FixedUpdate to process
+        _inputJumpReleased = true;
     }
 
     private void CoyoteJump()
@@ -267,7 +328,7 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        _coyoteJumpTimeLeft -= Time.deltaTime;
+        _coyoteJumpTimeLeft -= Time.fixedDeltaTime;
     }
 
     private void JumpBuffer()
@@ -275,7 +336,7 @@ public class PlayerMovement : MonoBehaviour
         if (_verticalSpeed > 0 && _playerCollision.DownCollision.Colliding)
             _jumpBufferTimeLeft = 0;
 
-        _jumpBufferTimeLeft -= Time.deltaTime;
+        _jumpBufferTimeLeft -= Time.fixedDeltaTime;
     }
 
     private bool CanJump()
@@ -321,21 +382,18 @@ public class PlayerMovement : MonoBehaviour
 
         var rightDistance = right.Distance < _grabDistance && right.RayHit;
         var leftDistance = left.Distance < _grabDistance && left.RayHit;
-        var grabPressed = _playerInput.IsGrabPressed();
 
-        return (rightDistance || leftDistance) && grabPressed;
+        return (rightDistance || leftDistance) && _inputGrabPressed;
     }
 
     private void HandleWallMovement()
     {
-        var inputY = _playerInput.GetVerticalInput();
-        var inputX = _playerInput.GetHorizontalInput();
         var collision = _playerCollision.GetClosestHorizontal();
 
         WallSlide();
         WallJump(collision);
-        WallGrab(collision, inputY);
-        WallGrabJump(collision, inputX);
+        WallGrab(collision, _inputVertical);
+        WallGrabJump(collision, _inputHorizontal);
 
         if (_verticalSpeed <= 0)
             _isWallJumpInProgress = false;
@@ -343,7 +401,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void WallSlide()
     {
-        _wallStickTimeLeft -= Time.deltaTime;
+        _wallStickTimeLeft -= Time.fixedDeltaTime;
 
         if (!IsOnWall() && _wallStickTimeLeft <= 0)
             return;
@@ -356,9 +414,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void WallJump(CollisionInfo collision)
     {
-        if(IsOnWall() && !_playerInput.IsGrabPressed() && _verticalSpeed < 0)
+        if(IsOnWall() && !_inputGrabPressed && _verticalSpeed < 0)
         {
-            if(_playerInput.IsJumpPressed() && _canWallJump && collision.LastHit)
+            if(_inputJumpHeld && _canWallJump && collision.LastHit)
             {
                 float hBefore = _horizontalSpeed;
                 float vBefore = _verticalSpeed;
@@ -374,9 +432,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void WallGrabJump(CollisionInfo collision, float input)
     {
-        _wallGrabJumpTimer -= Time.deltaTime;
+        _wallGrabJumpTimer -= Time.fixedDeltaTime;
 
-        if (CanGrab() && collision != null && _playerInput.IsJumpPressed())
+        if (CanGrab() && collision != null && _inputJumpHeld)
         {
             // Priority 1: Jump OFF the wall (away from wall)
             if(input != 0 && collision.RaycastInfo.RayDirection.x != input)
@@ -403,7 +461,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void WallGrab(CollisionInfo collision, float input)
     {
-        _wallGrabTimeLeft -= Time.deltaTime;
+        _wallGrabTimeLeft -= Time.fixedDeltaTime;
 
         if (_playerCollision.DownCollision.Colliding)
             _wallGrabTimeLeft = _wallGrabTime;
@@ -431,17 +489,14 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnDashPressed()
     {
-        if(_canDash)
-        {
-            _dashTimer = _dashDuration;
-            OnDash?.Invoke();
-        }
+        // Set flag for FixedUpdate to process
+        _inputDashPressed = true;
     }
 
     private void Dash()
     {
-        var inputX = _playerInput.GetHorizontalInput();
-        var inputY = _playerInput.GetVerticalInput();
+        float inputX = _inputHorizontal;
+        float inputY = _inputVertical;
 
         if (inputX == 0 && inputY == 0)
             inputX = 1;
@@ -451,7 +506,7 @@ public class PlayerMovement : MonoBehaviour
         if (_playerCollision.DownCollision.Colliding)
             _canDash = true;
 
-        _dashTimer -= Time.deltaTime;
+        _dashTimer -= Time.fixedDeltaTime;
 
         if (_dashTimer <= 0)
         {
@@ -497,7 +552,7 @@ public class PlayerMovement : MonoBehaviour
     {
         var pos = _transform.position;
         _rawMovement = new Vector2(_horizontalSpeed, _verticalSpeed);
-        var move = _rawMovement * Time.deltaTime;
+        var move = _rawMovement * Time.fixedDeltaTime;
         _furthestPoint = (Vector2)pos + move;
 
         _playerCollision.HandleCollisions(_furthestPoint, ref move, _rawMovement);
