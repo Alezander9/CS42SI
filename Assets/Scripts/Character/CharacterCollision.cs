@@ -52,7 +52,7 @@ public class CollisionInfo
 }
 
 [RequireComponent(typeof(BoxCollider2D))]
-public class PlayerCollision : MonoBehaviour
+public class CharacterCollision : MonoBehaviour
 {
     [HideInInspector] public CollisionInfo DownCollision;
     [HideInInspector] public CollisionInfo UpCollision;
