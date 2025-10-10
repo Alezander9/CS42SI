@@ -12,6 +12,14 @@ public class PlayerInput : MonoBehaviour, ICharacterInput
     public event Action onDashPressed;
 
     private PlayerInputActions _inputActions;
+    
+    // Track one-frame events
+    private bool _jumpPressedThisFrame;
+    private bool _jumpReleasedThisFrame;
+    private bool _dashPressedThisFrame;
+    
+    // Track if we need to clear flags (set after they've been read)
+    private bool _clearFlagsNextFixedUpdate;
 
     private void Awake()
     {
@@ -28,37 +36,52 @@ public class PlayerInput : MonoBehaviour, ICharacterInput
 
     private void DashPerformed(InputAction.CallbackContext context)
     {
+        _dashPressedThisFrame = true;
         onDashPressed?.Invoke();
     }
 
     private void JumpCanceled(InputAction.CallbackContext context)
     {
+        _jumpReleasedThisFrame = true;
         onJumpReleased?.Invoke();
     }
 
     private void JumpPerformed(InputAction.CallbackContext context)
     {
+        _jumpPressedThisFrame = true;
         onJumpPressed?.Invoke();
     }
-
-    public float GetHorizontalInput()
+    
+    private void FixedUpdate()
     {
-        return _inputActions.Player.Horizontal.ReadValue<float>();
+        // Clear flags from previous frame if they were set
+        if (_clearFlagsNextFixedUpdate)
+        {
+            _jumpPressedThisFrame = false;
+            _jumpReleasedThisFrame = false;
+            _dashPressedThisFrame = false;
+            _clearFlagsNextFixedUpdate = false;
+        }
+        
+        // Mark for clearing next FixedUpdate if any flags are set
+        if (_jumpPressedThisFrame || _jumpReleasedThisFrame || _dashPressedThisFrame)
+        {
+            _clearFlagsNextFixedUpdate = true;
+        }
     }
-
-    public float GetVerticalInput()
+    
+    public InputState GetInputState()
     {
-        return _inputActions.Player.Vertical.ReadValue<float>();
-    }
-
-    public bool IsJumpPressed()
-    {
-        return _inputActions.Player.Jump.inProgress;
-    }
-
-    public bool IsGrabPressed()
-    {
-        return _inputActions.Player.WallGrab.inProgress;
+        return new InputState
+        {
+            Horizontal = _inputActions.Player.Horizontal.ReadValue<float>(),
+            Vertical = _inputActions.Player.Vertical.ReadValue<float>(),
+            JumpHeld = _inputActions.Player.Jump.inProgress,
+            GrabHeld = _inputActions.Player.WallGrab.inProgress,
+            JumpPressed = _jumpPressedThisFrame,
+            JumpReleased = _jumpReleasedThisFrame,
+            DashPressed = _dashPressedThisFrame
+        };
     }
 
     private void OnDestroy()

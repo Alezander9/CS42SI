@@ -5,13 +5,10 @@ using System;
 
 public interface ICharacterInput
 {
-    // Axis inputs
-    float GetHorizontalInput();
-    float GetVerticalInput();
-    
-    // Button state queries
-    bool IsJumpPressed();
-    bool IsGrabPressed();
+    /// <summary>
+    /// Gets the current input state. Single source of truth for all input data.
+    /// </summary>
+    InputState GetInputState();
     
     // Events for button presses and releases
     event Action onJumpPressed;

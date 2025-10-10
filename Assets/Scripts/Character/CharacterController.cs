@@ -141,11 +141,12 @@ public class CharacterController : MonoBehaviour
 
     private void Update()
     {
-        // Poll input every frame for responsiveness
-        _inputHorizontal = _characterInput.GetHorizontalInput();
-        _inputVertical = _characterInput.GetVerticalInput();
-        _inputJumpHeld = _characterInput.IsJumpPressed();
-        _inputGrabPressed = _characterInput.IsGrabPressed();
+        // Poll input every frame for responsiveness using InputState (single source of truth)
+        InputState inputState = _characterInput.GetInputState();
+        _inputHorizontal = inputState.Horizontal;
+        _inputVertical = inputState.Vertical;
+        _inputJumpHeld = inputState.JumpHeld;
+        _inputGrabPressed = inputState.GrabHeld;
     }
 
     private void FixedUpdate()
