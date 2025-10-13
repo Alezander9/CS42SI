@@ -33,8 +33,12 @@ public class CharacterController : MonoBehaviour
     [SerializeField] private float _wallGrabTime = 4;
     [SerializeField] private float _grabDistance = 0.2f;
     [SerializeField] private float _wallGrabJumpApexTime = 0.15f;
-    [SerializeField] private Vector2 _topEdgeClimbJump = new Vector2(6, 10);
-    [SerializeField] private Vector2 _wallJump = new Vector2(12, 20);
+    
+    [Header("Wall Jump Heights")]
+    [SerializeField] private float _wallJumpHeight = 3.5f;
+    [SerializeField] private float _wallJumpHorizontalSpeed = 12f;
+    [SerializeField] private float _topEdgeClimbHeight = 2f;
+    [SerializeField] private float _topEdgeClimbHorizontalSpeed = 6f;
 
     [Header("Dash")]
     [SerializeField] private float _dashDistance = 3f;
@@ -50,6 +54,8 @@ public class CharacterController : MonoBehaviour
     private float _maxJumpSpeed;
     private float _minJumpSpeed;
     private float _wallGrabJumpSpeed;
+    private float _wallJumpSpeed;
+    private float _topEdgeClimbSpeed;
     private float _wallGrabJumpTimer;
     private Vector2 _rawMovement;
     private Vector2 _lastPosition;
@@ -135,6 +141,8 @@ public class CharacterController : MonoBehaviour
         _maxJumpSpeed = _gravity * _timeToJumpApex;
         _minJumpSpeed = Mathf.Sqrt(2 * _gravity * _minJumpHeight);
         _wallGrabJumpSpeed = _gravity * _wallGrabJumpApexTime;
+        _wallJumpSpeed = Mathf.Sqrt(2 * _gravity * _wallJumpHeight);
+        _topEdgeClimbSpeed = Mathf.Sqrt(2 * _gravity * _topEdgeClimbHeight);
     }
 
     #endregion
@@ -430,9 +438,9 @@ public class CharacterController : MonoBehaviour
             {
                 float hBefore = _horizontalSpeed;
                 float vBefore = _verticalSpeed;
-                _horizontalSpeed = _wallJump.x * -collision.RaycastInfo.RayDirection.x;
-                _verticalSpeed = _wallJump.y;
-                LogMovementFunction("WallJump", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJump=({_wallJump.x:F2}, {_wallJump.y:F2})");
+                _horizontalSpeed = _wallJumpHorizontalSpeed * -collision.RaycastInfo.RayDirection.x;
+                _verticalSpeed = _wallJumpSpeed;
+                LogMovementFunction("WallJump", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJumpH={_wallJumpHorizontalSpeed:F2}, wallJumpSpeed={_wallJumpSpeed:F2}, height={_wallJumpHeight:F2}");
                 _wallStickTimeLeft = _wallStickTime;
                 _canWallJump = false;
                 _jumpBufferTimeLeft = 0; // Consume jump buffer
@@ -451,9 +459,9 @@ public class CharacterController : MonoBehaviour
             {
                 float hBefore = _horizontalSpeed;
                 float vBefore = _verticalSpeed;
-                _horizontalSpeed = _wallJump.x * input;
-                _verticalSpeed = _wallJump.y;
-                LogMovementFunction("WallGrabJump(off)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJump=({_wallJump.x:F2}, {_wallJump.y:F2})");
+                _horizontalSpeed = _wallJumpHorizontalSpeed * input;
+                _verticalSpeed = _wallJumpSpeed;
+                LogMovementFunction("WallGrabJump(off)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJumpH={_wallJumpHorizontalSpeed:F2}, wallJumpSpeed={_wallJumpSpeed:F2}, height={_wallJumpHeight:F2}");
                 _jumpBufferTimeLeft = 0; // Consume jump buffer
                 return;
             }
@@ -482,9 +490,9 @@ public class CharacterController : MonoBehaviour
             {
                 float hBefore = _horizontalSpeed;
                 float vBefore = _verticalSpeed;
-                _verticalSpeed = _topEdgeClimbJump.y;
-                _horizontalSpeed = _topEdgeClimbJump.x * collision.RaycastInfo.RayDirection.x;
-                LogMovementFunction("WallGrab(edgeClimb)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"topEdgeClimbJump=({_topEdgeClimbJump.x:F2}, {_topEdgeClimbJump.y:F2})");
+                _verticalSpeed = _topEdgeClimbSpeed;
+                _horizontalSpeed = _topEdgeClimbHorizontalSpeed * collision.RaycastInfo.RayDirection.x;
+                LogMovementFunction("WallGrab(edgeClimb)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"edgeClimbH={_topEdgeClimbHorizontalSpeed:F2}, edgeClimbSpeed={_topEdgeClimbSpeed:F2}, height={_topEdgeClimbHeight:F2}");
                 return;
             }
 
