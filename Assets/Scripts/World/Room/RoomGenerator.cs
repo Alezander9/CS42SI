@@ -36,12 +36,6 @@ public class RoomGenerator : MonoBehaviour
     private System.Random _random;
     private Vector2Int[] _portalPositions;
     
-    private void Start()
-    {
-        GenerateRoom();
-    }
-    
-    [ContextMenu("Generate Room")]
     public void GenerateRoom()
     {
         // Initialize random with combined seed
@@ -347,6 +341,27 @@ public class RoomGenerator : MonoBehaviour
         {
             _tilemap.SetTile(tilePosition, null);
         }
+    }
+    
+    /// <summary>
+    /// Returns all three portal world positions. [0]=Left, [1]=Right, [2]=Center
+    /// </summary>
+    public Vector3[] GetPortalWorldPositions()
+    {
+        if (_portalPositions == null || _portalPositions.Length < 3)
+        {
+            Debug.LogWarning("Room not yet generated or portal positions not set");
+            return new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
+        }
+        
+        Vector3[] worldPositions = new Vector3[3];
+        for (int i = 0; i < 3; i++)
+        {
+            Vector2Int gridPos = _portalPositions[i];
+            worldPositions[i] = new Vector3(gridPos.x * _blockSize, gridPos.y * _blockSize, 0);
+        }
+        
+        return worldPositions;
     }
     
     private void OnDrawGizmos()

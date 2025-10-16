@@ -8,6 +8,7 @@ public class TestSceneBootstrap : MonoBehaviour
     [Header("Spawn Settings")]
     [SerializeField] private Vector3 _playerSpawnPosition = new Vector3(0, 2, 0);
     [SerializeField] private string _characterPrefabPath = "Prefabs/Character";
+    [SerializeField] private bool _spawnAtCenterPortal = true;
     
     [Header("Test Scenarios")]
     [SerializeField] private bool _spawnPlayer = true;
@@ -20,14 +21,50 @@ public class TestSceneBootstrap : MonoBehaviour
     private GameObject _characterPrefab;
     private CharacterController _playerCharacter;
     private InputRecorder _recorder;
+    private RoomGenerator _roomGenerator;
+    private CameraManager _cameraManager;
 
     private void Start()
     {
         LoadPrefab();
         
+        // Find and generate room first
+        _roomGenerator = FindObjectOfType<RoomGenerator>();
+        if (_roomGenerator != null)
+        {
+            _roomGenerator.GenerateRoom();
+            Debug.Log("Room generated successfully");
+            
+            // Update spawn position to center portal if enabled
+            if (_spawnAtCenterPortal)
+            {
+                Vector3[] portals = _roomGenerator.GetPortalWorldPositions();
+                _playerSpawnPosition = portals[2]; // Index 2 is center portal
+                Debug.Log($"Player spawn position set to center portal: {_playerSpawnPosition}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("No RoomGenerator found in scene. Using default spawn position.");
+        }
+        
         if (_spawnPlayer)
         {
             SpawnPlayer();
+            SetupCamera();
+        }
+    }
+    
+    private void SetupCamera()
+    {
+        _cameraManager = FindObjectOfType<CameraManager>();
+        
+        if (_cameraManager != null && _playerCharacter != null)
+        {
+            Vector3 cameraStartPos = _cameraManager.transform.position;
+            var followCam = new FollowPlayerCamera(_playerCharacter.transform, cameraStartPos);
+            _cameraManager.SetController(followCam);
+            Debug.Log("Camera set to follow player");
         }
     }
 
@@ -171,7 +208,16 @@ public class TestSceneBootstrap : MonoBehaviour
     /// </summary>
     public CharacterController SpawnGhostAtOffset(InputRecording recording)
     {
-        return SpawnGhost(_playerSpawnPosition + _ghostSpawnOffset, recording);
+        Vector3 spawnPos = _playerSpawnPosition + _ghostSpawnOffset;
+        
+        // If spawning at center portal and room exists, use that as reference
+        if (_spawnAtCenterPortal && _roomGenerator != null)
+        {
+            Vector3[] portals = _roomGenerator.GetPortalWorldPositions();
+            spawnPos = portals[2] + _ghostSpawnOffset; // Index 2 is center portal
+        }
+        
+        return SpawnGhost(spawnPos, recording);
     }
     
     /// <summary>
