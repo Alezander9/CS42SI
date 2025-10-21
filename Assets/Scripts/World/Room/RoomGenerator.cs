@@ -11,6 +11,16 @@ public class RoomGenerator : MonoBehaviour
     [SerializeField] private int _roomY = 0;
     [SerializeField] private int _globalSeed = 12345;
     
+    /// <summary>
+    /// Set room coordinates and seed (called by WorldManager/RoomInstance).
+    /// </summary>
+    public void SetRoomCoordinates(int roomX, int roomY, int globalSeed)
+    {
+        _roomX = roomX;
+        _roomY = roomY;
+        _globalSeed = globalSeed;
+    }
+    
     [Header("Room Dimensions")]
     [SerializeField] private int _roomWidth = 50;
     [SerializeField] private int _roomHeight = 40;
@@ -270,6 +280,12 @@ public class RoomGenerator : MonoBehaviour
             return;
         }
         
+        if (_tilemap == null)
+        {
+            Debug.LogError("Cannot spawn portals: Tilemap reference is missing!");
+            return;
+        }
+        
         // Clear existing portals
         foreach (Transform child in transform)
         {
@@ -279,20 +295,19 @@ public class RoomGenerator : MonoBehaviour
             }
         }
         
-        // Spawn new portals
+        // Spawn new portals using tilemap coordinate conversion
         for (int i = 0; i < _portalPositions.Length; i++)
         {
             Vector2Int gridPos = _portalPositions[i];
-            Vector3 worldPos = new Vector3(
-                gridPos.x * _blockSize,
-                gridPos.y * _blockSize,
-                0
-            );
+            
+            // Convert grid cell coordinates to world space using Tilemap
+            Vector3Int cellPos = new Vector3Int(gridPos.x, gridPos.y, 0);
+            Vector3 worldPos = _tilemap.GetCellCenterWorld(cellPos);
             
             GameObject portal = Instantiate(_portalPrefab, worldPos, Quaternion.identity, transform);
             portal.name = $"Portal_{i}_{(i == 0 ? "Left" : i == 1 ? "Right" : "Center")}";
             
-            Debug.Log($"Spawned portal at grid ({gridPos.x}, {gridPos.y}) -> world {worldPos}");
+            Debug.Log($"Spawned portal {i} at grid ({gridPos.x}, {gridPos.y}) -> world {worldPos}");
         }
     }
     
@@ -354,26 +369,55 @@ public class RoomGenerator : MonoBehaviour
             return new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
         }
         
+        if (_tilemap == null)
+        {
+            Debug.LogError("Tilemap reference missing!");
+            return new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
+        }
+        
         Vector3[] worldPositions = new Vector3[3];
         for (int i = 0; i < 3; i++)
         {
             Vector2Int gridPos = _portalPositions[i];
-            worldPositions[i] = new Vector3(gridPos.x * _blockSize, gridPos.y * _blockSize, 0);
+            Vector3Int cellPos = new Vector3Int(gridPos.x, gridPos.y, 0);
+            worldPositions[i] = _tilemap.GetCellCenterWorld(cellPos);
         }
         
         return worldPositions;
     }
     
+    /// <summary>
+    /// Get the world-space bounds of this room based on its tilemap.
+    /// </summary>
+    public Bounds GetWorldBounds()
+    {
+        if (_tilemap == null)
+        {
+            Debug.LogError("Cannot get bounds: Tilemap reference missing!");
+            return new Bounds(transform.position, Vector3.one);
+        }
+        
+        // Calculate bounds from grid dimensions using tilemap coordinate conversion
+        Vector3 min = _tilemap.GetCellCenterWorld(new Vector3Int(0, 0, 0));
+        Vector3 max = _tilemap.GetCellCenterWorld(new Vector3Int(_roomWidth - 1, _roomHeight - 1, 0));
+        
+        Vector3 center = (min + max) / 2f;
+        Vector3 size = max - min + new Vector3(_blockSize, _blockSize, 0); // Add one cell size for full coverage
+        
+        return new Bounds(center, size);
+    }
+    
     private void OnDrawGizmos()
     {
-        if (_grid == null || _portalPositions == null)
+        if (_tilemap == null || _portalPositions == null)
             return;
         
-        // Draw portal positions
+        // Draw portal positions and clear radius using tilemap coordinates
         Gizmos.color = Color.cyan;
         foreach (var pos in _portalPositions)
         {
-            Vector3 worldPos = new Vector3(pos.x * _blockSize, pos.y * _blockSize, 0);
+            Vector3Int cellPos = new Vector3Int(pos.x, pos.y, 0);
+            Vector3 worldPos = _tilemap.GetCellCenterWorld(cellPos);
             Gizmos.DrawWireSphere(worldPos, _portalClearRadius * _blockSize);
         }
     }

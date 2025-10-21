@@ -8,7 +8,7 @@ public class TestSceneBootstrap : MonoBehaviour
     [Header("Spawn Settings")]
     [SerializeField] private Vector3 _playerSpawnPosition = new Vector3(0, 2, 0);
     [SerializeField] private string _characterPrefabPath = "Prefabs/Character";
-    [SerializeField] private bool _spawnAtCenterPortal = true;
+    [SerializeField] private bool _useWorldManager = true;
     
     [Header("Test Scenarios")]
     [SerializeField] private bool _spawnPlayer = true;
@@ -22,30 +22,42 @@ public class TestSceneBootstrap : MonoBehaviour
     private CharacterController _playerCharacter;
     private InputRecorder _recorder;
     private RoomGenerator _roomGenerator;
+    private WorldManager _worldManager;
     private CameraManager _cameraManager;
 
     private void Start()
     {
         LoadPrefab();
         
-        // Find and generate room first
-        _roomGenerator = FindObjectOfType<RoomGenerator>();
-        if (_roomGenerator != null)
+        // Check if using WorldManager or standalone RoomGenerator
+        _worldManager = FindObjectOfType<WorldManager>();
+        
+        if (_useWorldManager && _worldManager != null)
         {
-            _roomGenerator.GenerateRoom();
-            Debug.Log("Room generated successfully");
+            // Initialize world (generates 3 rooms)
+            _worldManager.InitializeWorld();
+            Debug.Log("World initialized via WorldManager");
             
-            // Update spawn position to center portal if enabled
-            if (_spawnAtCenterPortal)
-            {
-                Vector3[] portals = _roomGenerator.GetPortalWorldPositions();
-                _playerSpawnPosition = portals[2]; // Index 2 is center portal
-                Debug.Log($"Player spawn position set to center portal: {_playerSpawnPosition}");
-            }
+            // Get spawn position from current room's center portal
+            _playerSpawnPosition = _worldManager.GetCurrentRoomCenterPortalPosition();
+            Debug.Log($"Player spawn position set to center portal: {_playerSpawnPosition}");
         }
         else
         {
-            Debug.LogWarning("No RoomGenerator found in scene. Using default spawn position.");
+            // Fallback to standalone RoomGenerator (legacy mode)
+            _roomGenerator = FindObjectOfType<RoomGenerator>();
+            if (_roomGenerator != null)
+            {
+                _roomGenerator.GenerateRoom();
+                Debug.Log("Room generated via standalone RoomGenerator");
+                
+                Vector3[] portals = _roomGenerator.GetPortalWorldPositions();
+                _playerSpawnPosition = portals[2]; // Index 2 is center portal
+            }
+            else
+            {
+                Debug.LogWarning("No WorldManager or RoomGenerator found in scene. Using default spawn position.");
+            }
         }
         
         if (_spawnPlayer)
@@ -209,14 +221,6 @@ public class TestSceneBootstrap : MonoBehaviour
     public CharacterController SpawnGhostAtOffset(InputRecording recording)
     {
         Vector3 spawnPos = _playerSpawnPosition + _ghostSpawnOffset;
-        
-        // If spawning at center portal and room exists, use that as reference
-        if (_spawnAtCenterPortal && _roomGenerator != null)
-        {
-            Vector3[] portals = _roomGenerator.GetPortalWorldPositions();
-            spawnPos = portals[2] + _ghostSpawnOffset; // Index 2 is center portal
-        }
-        
         return SpawnGhost(spawnPos, recording);
     }
     
