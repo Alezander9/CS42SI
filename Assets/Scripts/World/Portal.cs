@@ -1,5 +1,6 @@
 // Portal component that detects player collision and triggers room transitions.
 
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Portal : MonoBehaviour
@@ -7,12 +8,14 @@ public class Portal : MonoBehaviour
     public enum PortalType { Left, Right, Center }
     
     [SerializeField] private PortalType _type;
+    [SerializeField] private float _teleportCooldown = 3f;
     
     public PortalType Type => _type;
     public RoomInstance OwnerRoom { get; set; }
     public Portal LinkedPortal { get; set; }
     
     private WorldManager _worldManager;
+    private static Dictionary<Transform, float> _lastTeleportTimes = new Dictionary<Transform, float>();
     
     private void Start()
     {
@@ -31,7 +34,26 @@ public class Portal : MonoBehaviour
             
         if (other.CompareTag("Player"))
         {
-            _worldManager?.OnPortalEntered(this, other.transform);
+            // Check if player is on cooldown
+            Transform playerTransform = other.transform;
+            
+            if (_lastTeleportTimes.TryGetValue(playerTransform, out float lastTeleportTime))
+            {
+                float timeSinceLastTeleport = Time.time - lastTeleportTime;
+                if (timeSinceLastTeleport < _teleportCooldown)
+                {
+                    // Still on cooldown
+                    float remainingCooldown = _teleportCooldown - timeSinceLastTeleport;
+                    Debug.Log($"Portal on cooldown: {remainingCooldown:F1}s remaining");
+                    return;
+                }
+            }
+            
+            // Record teleport time
+            _lastTeleportTimes[playerTransform] = Time.time;
+            
+            // Trigger teleport
+            _worldManager?.OnPortalEntered(this, playerTransform);
         }
     }
     

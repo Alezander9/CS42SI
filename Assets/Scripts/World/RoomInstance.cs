@@ -108,6 +108,14 @@ public class RoomInstance
         return -1;
     }
     
+    /// <summary>
+    /// Update the world offset when the world is shifted.
+    /// </summary>
+    public void UpdateWorldOffset(Vector3 newOffset)
+    {
+        WorldOffset = newOffset;
+    }
+    
     public void Destroy()
     {
         if (RootObject != null)

@@ -34,20 +34,22 @@ public class WorldManager : MonoBehaviour
     
     /// <summary>
     /// Initialize world by generating the starting three rooms (left, current, right).
+    /// Current room starts at origin (0,0).
     /// </summary>
     public void InitializeWorld()
     {
         _currentRoomX = _startingRoomX;
         
-        // Generate initial three rooms
-        GenerateRoom(_currentRoomX - 1);
-        GenerateRoom(_currentRoomX);
-        GenerateRoom(_currentRoomX + 1);
+        // Generate initial three rooms with current room at origin
+        // Left room at -roomSpacing, current at 0, right at +roomSpacing
+        GenerateRoomAtPosition(_currentRoomX - 1, new Vector3(-_roomSpacing, 0, 0));
+        GenerateRoomAtPosition(_currentRoomX, Vector3.zero);
+        GenerateRoomAtPosition(_currentRoomX + 1, new Vector3(_roomSpacing, 0, 0));
         
         // Link portals between adjacent rooms
         LinkPortals();
         
-        Debug.Log($"World initialized at room {_currentRoomX} with rooms [{_currentRoomX - 1}, {_currentRoomX}, {_currentRoomX + 1}]");
+        Debug.Log($"World initialized at room {_currentRoomX} with rooms [{_currentRoomX - 1}, {_currentRoomX}, {_currentRoomX + 1}] (current at origin)");
     }
     
     /// <summary>
@@ -63,8 +65,8 @@ public class WorldManager : MonoBehaviour
             }
         }
         
-        Debug.LogWarning("Could not get center portal position, using world offset");
-        return GetWorldOffset(_currentRoomX);
+        Debug.LogWarning("Could not get center portal position, using origin");
+        return Vector3.zero;
     }
     
     /// <summary>
@@ -80,30 +82,67 @@ public class WorldManager : MonoBehaviour
             return;
         }
         
-        // Teleport player to linked portal
-        TeleportPlayer(player, portal.LinkedPortal);
-        
         // Shift rooms if entering edge portal
         int newRoomX = portal.LinkedPortal.OwnerRoom.RoomX;
         if (newRoomX != _currentRoomX)
         {
-            ShiftRooms(newRoomX);
+            // Calculate player's offset from destination portal before shift
+            Vector3 destinationPortal = portal.LinkedPortal.transform.position;
+            Vector3 exitDirection = portal.LinkedPortal.Type == Portal.PortalType.Left ? Vector3.right : Vector3.left;
+            Vector3 offsetFromPortal = exitDirection * _portalExitOffset;
+            
+            // Shift world so new room is at origin
+            ShiftWorldToRoom(newRoomX);
+            
+            // Teleport player to linked portal (now at new position after shift)
+            Vector3 newDestination = portal.LinkedPortal.transform.position + offsetFromPortal;
+            player.position = newDestination;
+            
+            // Instantly move camera to player position (no lerp)
+            CameraManager cameraManager = FindObjectOfType<CameraManager>();
+            if (cameraManager != null)
+            {
+                Camera cam = cameraManager.GetComponent<Camera>();
+                if (cam != null)
+                {
+                    Vector3 camPos = cam.transform.position;
+                    camPos.x = newDestination.x;
+                    camPos.y = newDestination.y;
+                    cam.transform.position = camPos;
+                }
+            }
+            
+            Debug.Log($"Teleported player to room {newRoomX} at {newDestination}");
         }
     }
     
-    private void TeleportPlayer(Transform player, Portal destinationPortal)
-    {
-        // Calculate exit position with offset away from portal
-        Vector3 exitDirection = destinationPortal.Type == Portal.PortalType.Left ? Vector3.right : Vector3.left;
-        Vector3 destination = destinationPortal.transform.position + exitDirection * _portalExitOffset;
-        
-        player.position = destination;
-        Debug.Log($"Teleported player to room {destinationPortal.OwnerRoom.RoomX} via {destinationPortal.Type} portal");
-    }
-    
-    private void ShiftRooms(int newCurrentRoomX)
+    /// <summary>
+    /// Shift the entire world so the specified room becomes centered at origin.
+    /// This keeps the player's current room always near (0,0) for better floating point precision.
+    /// </summary>
+    private void ShiftWorldToRoom(int newCurrentRoomX)
     {
         int oldCurrentRoomX = _currentRoomX;
+        
+        // Calculate the offset needed to move new current room to origin
+        RoomInstance newCurrentRoom = _loadedRooms[newCurrentRoomX];
+        Vector3 shiftOffset = -newCurrentRoom.WorldOffset;
+        
+        // Shift all loaded rooms
+        foreach (var kvp in _loadedRooms)
+        {
+            RoomInstance room = kvp.Value;
+            room.RootObject.transform.position += shiftOffset;
+            room.UpdateWorldOffset(room.WorldOffset + shiftOffset);
+        }
+        
+        // Shift player
+        if (_playerTransform != null)
+        {
+            _playerTransform.position += shiftOffset;
+        }
+        
+        // Update current room
         _currentRoomX = newCurrentRoomX;
         
         // Determine which room to unload and which to generate
@@ -112,27 +151,29 @@ public class WorldManager : MonoBehaviour
             // Moved right: unload left, generate new right
             int unloadX = newCurrentRoomX - 2;
             int generateX = newCurrentRoomX + 1;
+            Vector3 newRoomPosition = new Vector3(_roomSpacing, 0, 0); // Right of origin
             
             UnloadRoom(unloadX);
-            GenerateRoom(generateX);
+            GenerateRoomAtPosition(generateX, newRoomPosition);
         }
         else
         {
             // Moved left: unload right, generate new left
             int unloadX = newCurrentRoomX + 2;
             int generateX = newCurrentRoomX - 1;
+            Vector3 newRoomPosition = new Vector3(-_roomSpacing, 0, 0); // Left of origin
             
             UnloadRoom(unloadX);
-            GenerateRoom(generateX);
+            GenerateRoomAtPosition(generateX, newRoomPosition);
         }
         
         // Re-link portals
         LinkPortals();
         
-        Debug.Log($"Shifted rooms: now at {_currentRoomX} with loaded rooms [{_currentRoomX - 1}, {_currentRoomX}, {_currentRoomX + 1}]");
+        Debug.Log($"Shifted world: room {_currentRoomX} now at origin. Loaded rooms [{_currentRoomX - 1}, {_currentRoomX}, {_currentRoomX + 1}]");
     }
     
-    private void GenerateRoom(int roomX)
+    private void GenerateRoomAtPosition(int roomX, Vector3 worldPosition)
     {
         if (_loadedRooms.ContainsKey(roomX))
         {
@@ -140,11 +181,10 @@ public class WorldManager : MonoBehaviour
             return;
         }
         
-        Vector3 worldOffset = GetWorldOffset(roomX);
-        RoomInstance room = new RoomInstance(roomX, worldOffset, _roomPrefab, _roomsContainer, _globalSeed);
+        RoomInstance room = new RoomInstance(roomX, worldPosition, _roomPrefab, _roomsContainer, _globalSeed);
         _loadedRooms[roomX] = room;
         
-        Debug.Log($"Generated room {roomX} at world position {worldOffset}");
+        Debug.Log($"Generated room {roomX} at world position {worldPosition}");
     }
     
     private void UnloadRoom(int roomX)
@@ -189,11 +229,6 @@ public class WorldManager : MonoBehaviour
                 }
             }
         }
-    }
-    
-    private Vector3 GetWorldOffset(int roomX)
-    {
-        return new Vector3(roomX * _roomSpacing, 0, 0);
     }
     
     /// <summary>

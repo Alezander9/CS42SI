@@ -6,10 +6,10 @@ using UnityEngine.Tilemaps;
 
 public class RoomGenerator : MonoBehaviour
 {
-    [Header("Room Identity")]
-    [SerializeField] private int _roomX = 0;
-    [SerializeField] private int _roomY = 0;
-    [SerializeField] private int _globalSeed = 12345;
+    // Room identity - set at runtime by WorldManager via SetRoomCoordinates()
+    private int _roomX;
+    private int _roomY;
+    private int _globalSeed;
     
     /// <summary>
     /// Set room coordinates and seed (called by WorldManager/RoomInstance).

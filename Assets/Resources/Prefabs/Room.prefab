@@ -45,9 +45,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b8bcf9f32f8f004380793e8133a7bca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _roomX: 0
-  _roomY: 0
-  _globalSeed: 1
   _roomWidth: 100
   _roomHeight: 80
   _blockSize: 1
