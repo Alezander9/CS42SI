@@ -34,9 +34,7 @@ public class RoomGenerator : MonoBehaviour
     
     [Header("Tile References")]
     [SerializeField] private Tilemap _tilemap;
-    [SerializeField] private TileBase _dirtTile;
-    [SerializeField] private TileBase _stoneTile;
-    [SerializeField] private TileBase _bedrockTile;
+    [SerializeField] private TileBase _baseGroundTile;  // Single white square tile for all ground types
     [SerializeField] private GameObject _portalPrefab;
     
     // Grid data
@@ -61,10 +59,10 @@ public class RoomGenerator : MonoBehaviour
         int combinedSeed = _globalSeed + _roomX * 1000 + _roomY;
         _random = new System.Random(combinedSeed);
         
-        // Setup tile database visual references
-        TileDatabase.SetVisualTile(TileType.Dirt, _dirtTile);
-        TileDatabase.SetVisualTile(TileType.Stone, _stoneTile);
-        TileDatabase.SetVisualTile(TileType.Bedrock, _bedrockTile);
+        // Setup tile database visual references - all tile types use the same base white tile
+        TileDatabase.SetVisualTile(TileType.Dirt, _baseGroundTile);
+        TileDatabase.SetVisualTile(TileType.Stone, _baseGroundTile);
+        TileDatabase.SetVisualTile(TileType.Bedrock, _baseGroundTile);
         
         Debug.Log($"Generating room ({_roomX}, {_roomY}) with seed {combinedSeed}");
         
@@ -360,6 +358,10 @@ public class RoomGenerator : MonoBehaviour
                 if (visualTile != null)
                 {
                     _tilemap.SetTile(tilePosition, visualTile);
+                    
+                    // Enable color override and apply programmatic color
+                    _tilemap.SetTileFlags(tilePosition, TileFlags.None);
+                    _tilemap.SetColor(tilePosition, TileDatabase.GetTileColor(type));
                 }
             }
         }
@@ -453,6 +455,10 @@ public class RoomGenerator : MonoBehaviour
             if (visualTile != null)
             {
                 _tilemap.SetTile(tilePosition, visualTile);
+                
+                // Enable color override and apply programmatic color
+                _tilemap.SetTileFlags(tilePosition, TileFlags.None);
+                _tilemap.SetColor(tilePosition, TileDatabase.GetTileColor(tileType));
             }
         }
     }

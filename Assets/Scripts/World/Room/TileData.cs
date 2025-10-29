@@ -2,6 +2,7 @@
 
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Core.ColorSystem;
 
 public enum TileType : byte // byte is 8 bits, so we can have 256 different tile types
 {
@@ -13,6 +14,19 @@ public enum TileType : byte // byte is 8 bits, so we can have 256 different tile
 }
 
 [System.Serializable]
+public struct TileColorDefinition
+{
+    public float Hue;           // 0-360 degrees
+    public ColorManager.ColorTier Tier;  // Background/Foreground/Special
+    
+    public TileColorDefinition(float hue, ColorManager.ColorTier tier)
+    {
+        Hue = hue;
+        Tier = tier;
+    }
+}
+
+[System.Serializable]
 public struct TileProperties
 {
     public TileType Type;
@@ -21,5 +35,6 @@ public struct TileProperties
     public bool IsDestructible;
     public bool HasCollision;
     public TileBase VisualTile;
+    public TileColorDefinition ColorDef;
 }
 
