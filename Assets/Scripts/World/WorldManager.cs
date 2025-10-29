@@ -1,6 +1,7 @@
 // Manages multiple rooms, portal connections, and player transitions between rooms.
 
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -23,12 +24,20 @@ public class WorldManager : MonoBehaviour
     private int _currentRoomX;
     private Dictionary<int, RoomInstance> _loadedRooms = new Dictionary<int, RoomInstance>();
     private Transform _playerTransform;
+    private string _saveDirectory;
     
     private void Awake()
     {
         if (_roomsContainer == null)
         {
             _roomsContainer = transform;
+        }
+        
+        // Setup save directory
+        _saveDirectory = Path.Combine(Application.persistentDataPath, "Rooms");
+        if (!Directory.Exists(_saveDirectory))
+        {
+            Directory.CreateDirectory(_saveDirectory);
         }
     }
     
@@ -181,10 +190,16 @@ public class WorldManager : MonoBehaviour
             return;
         }
         
-        RoomInstance room = new RoomInstance(roomX, worldPosition, _roomPrefab, _roomsContainer, _globalSeed);
+        // Check for saved state
+        string savePath = GetRoomSavePath(roomX);
+        SerializedRoomState savedState = RoomSerializer.LoadRoomFromDisk(savePath);
+        
+        // Create room with optional saved state
+        RoomInstance room = new RoomInstance(roomX, worldPosition, _roomPrefab, _roomsContainer, _globalSeed, savedState);
         _loadedRooms[roomX] = room;
         
-        Debug.Log($"Generated room {roomX} at world position {worldPosition}");
+        string stateInfo = savedState != null ? " (loaded from save)" : " (fresh generation)";
+        Debug.Log($"Generated room {roomX} at world position {worldPosition}{stateInfo}");
     }
     
     private void UnloadRoom(int roomX)
@@ -194,14 +209,20 @@ public class WorldManager : MonoBehaviour
             return;
         }
         
+        // Serialize room state before destroying
+        SerializedRoomState state = room.Generator.SerializeState();
+        string savePath = GetRoomSavePath(roomX);
+        RoomSerializer.SaveRoomToDisk(state, savePath);
+        
         room.Destroy();
         _loadedRooms.Remove(roomX);
         
-        // TODO: Serialize room state before destroying
-        // TODO: Save destructible terrain changes
-        // TODO: Save entity positions/states
-        
-        Debug.Log($"Unloaded room {roomX}");
+        Debug.Log($"Unloaded and saved room {roomX}");
+    }
+    
+    private string GetRoomSavePath(int roomX)
+    {
+        return Path.Combine(_saveDirectory, $"room_{roomX}.json");
     }
     
     private void LinkPortals()

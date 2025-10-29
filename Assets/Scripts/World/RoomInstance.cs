@@ -12,7 +12,7 @@ public class RoomInstance
     public bool IsGenerated { get; private set; }
     public Bounds WorldBounds { get; private set; }
     
-    public RoomInstance(int roomX, Vector3 worldOffset, GameObject roomPrefab, Transform parent, int globalSeed)
+    public RoomInstance(int roomX, Vector3 worldOffset, GameObject roomPrefab, Transform parent, int globalSeed, SerializedRoomState savedState = null)
     {
         RoomX = roomX;
         WorldOffset = worldOffset;
@@ -32,8 +32,8 @@ public class RoomInstance
         // Configure generator
         Generator.SetRoomCoordinates(roomX, 0, globalSeed);
         
-        // Generate the room
-        Generator.GenerateRoom();
+        // Generate the room (with optional saved state)
+        Generator.GenerateRoom(savedState);
         IsGenerated = true;
         
         // Calculate and store world bounds
@@ -42,7 +42,8 @@ public class RoomInstance
         // Find and setup portal components
         SetupPortals();
         
-        Debug.Log($"Room {roomX} bounds: Center={WorldBounds.center}, Size={WorldBounds.size}");
+        string stateInfo = savedState != null ? " (restored from save)" : "";
+        Debug.Log($"Room {roomX} bounds: Center={WorldBounds.center}, Size={WorldBounds.size}{stateInfo}");
     }
     
     private void SetupPortals()

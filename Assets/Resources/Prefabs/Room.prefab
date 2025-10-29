@@ -53,7 +53,9 @@ MonoBehaviour:
   _smoothingIterations: 5
   _portalClearRadius: 3
   _tilemap: {fileID: 5486060157442270405}
-  _groundTile: {fileID: 11400000, guid: 199bb8ed63dde9e45bc5c341fd4fdf4f, type: 2}
+  _dirtTile: {fileID: 11400000, guid: 199bb8ed63dde9e45bc5c341fd4fdf4f, type: 2}
+  _stoneTile: {fileID: 11400000, guid: 199bb8ed63dde9e45bc5c341fd4fdf4f, type: 2}
+  _bedrockTile: {fileID: 11400000, guid: 199bb8ed63dde9e45bc5c341fd4fdf4f, type: 2}
   _portalPrefab: {fileID: 5935662121880705568, guid: 46ba2ec1b0cc3ac47aec92583fee2b9a, type: 3}
 --- !u!1 &5355419033709569024
 GameObject:

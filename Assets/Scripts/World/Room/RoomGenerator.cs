@@ -32,25 +32,39 @@ public class RoomGenerator : MonoBehaviour
     [SerializeField] private int _smoothingIterations = 5;
     [SerializeField] private int _portalClearRadius = 3;
     
-    [Header("References")]
+    [Header("Tile References")]
     [SerializeField] private Tilemap _tilemap;
-    [SerializeField] private TileBase _groundTile;
+    [SerializeField] private TileBase _dirtTile;
+    [SerializeField] private TileBase _stoneTile;
+    [SerializeField] private TileBase _bedrockTile;
     [SerializeField] private GameObject _portalPrefab;
     
-    // Tile types
-    private const int AIR = 0;
-    private const int GROUND = 1;
-    private const int PORTAL = 2;
-    
-    private int[,] _grid;
+    // Grid data
+    private TileType[,] _originalGrid;  // As-generated (for delta comparison)
+    private TileType[,] _grid;          // Current state (with modifications)
     private System.Random _random;
     private Vector2Int[] _portalPositions;
+    private TerrainDamageSystem _damageSystem;
     
-    public void GenerateRoom()
+    // Public accessors for serialization
+    public int RoomX => _roomX;
+    public int RoomY => _roomY;
+    public int Seed => _globalSeed;
+    public int Width => _roomWidth;
+    public int Height => _roomHeight;
+    public TileType[,] OriginalGrid => _originalGrid;
+    public TileType[,] CurrentGrid => _grid;
+    
+    public void GenerateRoom(SerializedRoomState savedState = null)
     {
         // Initialize random with combined seed
         int combinedSeed = _globalSeed + _roomX * 1000 + _roomY;
         _random = new System.Random(combinedSeed);
+        
+        // Setup tile database visual references
+        TileDatabase.SetVisualTile(TileType.Dirt, _dirtTile);
+        TileDatabase.SetVisualTile(TileType.Stone, _stoneTile);
+        TileDatabase.SetVisualTile(TileType.Bedrock, _bedrockTile);
         
         Debug.Log($"Generating room ({_roomX}, {_roomY}) with seed {combinedSeed}");
         
@@ -69,18 +83,35 @@ public class RoomGenerator : MonoBehaviour
         // Phase 4: Clear areas around portals
         ClearAroundPortals();
         
-        // Phase 5: Build the visual mesh/tilemap
+        // Phase 5: Store original state (before any modifications)
+        _originalGrid = (TileType[,])_grid.Clone();
+        
+        // Phase 6: Apply saved state if provided
+        if (savedState != null)
+        {
+            RoomSerializer.ApplyRoomState(savedState, _grid);
+        }
+        
+        // Phase 7: Initialize damage system
+        _damageSystem = new TerrainDamageSystem(_grid, _tilemap, _roomWidth, _roomHeight);
+        
+        if (savedState != null && savedState.DamagedTiles != null)
+        {
+            _damageSystem.RestoreDamagedTiles(savedState.DamagedTiles);
+        }
+        
+        // Phase 8: Build the visual mesh/tilemap
         BuildTilemap();
         
-        // Phase 6: Spawn portal sprites
+        // Phase 9: Spawn portal sprites
         SpawnPortalSprites();
         
-        Debug.Log($"Room generation complete: {CountTiles(GROUND)} ground tiles, {CountTiles(AIR)} air tiles");
+        Debug.Log($"Room generation complete: {CountTiles(TileType.Stone)} stone, {CountTiles(TileType.Dirt)} dirt, {CountTiles(TileType.Air)} air");
     }
     
     private void InitializeGridWithNoise(int seed)
     {
-        _grid = new int[_roomWidth, _roomHeight];
+        _grid = new TileType[_roomWidth, _roomHeight];
         
         // Use Perlin noise for initial distribution
         float offsetX = seed * 0.1f;
@@ -99,7 +130,34 @@ public class RoomGenerator : MonoBehaviour
                 float verticalGradient = 1f - (y / (float)_roomHeight);
                 noiseValue = noiseValue * 0.7f + verticalGradient * 0.3f;
                 
-                _grid[x, y] = noiseValue > _fillThreshold ? GROUND : AIR;
+                // Determine tile type based on noise and depth
+                if (noiseValue > _fillThreshold)
+                {
+                    // Bedrock at bottom 2 rows
+                    if (y <= 1)
+                    {
+                        _grid[x, y] = TileType.Bedrock;
+                    }
+                    // Stone deeper down (below 30% height)
+                    else if (y < _roomHeight * 0.3f)
+                    {
+                        _grid[x, y] = TileType.Stone;
+                    }
+                    // Mix of dirt and stone in middle
+                    else if (y < _roomHeight * 0.6f)
+                    {
+                        _grid[x, y] = _random.NextDouble() < 0.6 ? TileType.Dirt : TileType.Stone;
+                    }
+                    // Mostly dirt higher up
+                    else
+                    {
+                        _grid[x, y] = TileType.Dirt;
+                    }
+                }
+                else
+                {
+                    _grid[x, y] = TileType.Air;
+                }
             }
         }
     }
@@ -126,38 +184,37 @@ public class RoomGenerator : MonoBehaviour
         {
             if (IsValidPosition(pos.x, pos.y))
             {
-                _grid[pos.x, pos.y] = PORTAL;
+                _grid[pos.x, pos.y] = TileType.Portal;
             }
         }
     }
     
     private void SmoothWithCellularAutomata()
     {
-        int[,] newGrid = new int[_roomWidth, _roomHeight];
+        TileType[,] newGrid = new TileType[_roomWidth, _roomHeight];
         
         for (int x = 0; x < _roomWidth; x++)
         {
             for (int y = 0; y < _roomHeight; y++)
             {
                 // Skip portal tiles - they're protected
-                if (_grid[x, y] == PORTAL)
+                if (_grid[x, y] == TileType.Portal)
                 {
-                    newGrid[x, y] = PORTAL;
+                    newGrid[x, y] = TileType.Portal;
                     continue;
                 }
                 
                 int groundNeighbors = CountGroundNeighbors(x, y);
                 
                 // Standard cellular automata rules
-                // If 5+ ground neighbors, become ground
-                // If 4 or fewer, become air
                 if (groundNeighbors >= 5)
                 {
-                    newGrid[x, y] = GROUND;
+                    // Inherit type from majority neighbor
+                    newGrid[x, y] = GetMajorityTileType(x, y);
                 }
                 else if (groundNeighbors <= 3)
                 {
-                    newGrid[x, y] = AIR;
+                    newGrid[x, y] = TileType.Air;
                 }
                 else
                 {
@@ -165,10 +222,10 @@ public class RoomGenerator : MonoBehaviour
                     newGrid[x, y] = _grid[x, y];
                 }
                 
-                // Edge tiles are always walls
+                // Edge tiles are always bedrock
                 if (x == 0 || x == _roomWidth - 1 || y == 0 || y == _roomHeight - 1)
                 {
-                    newGrid[x, y] = GROUND;
+                    newGrid[x, y] = TileType.Bedrock;
                 }
             }
         }
@@ -198,7 +255,8 @@ public class RoomGenerator : MonoBehaviour
                     continue;
                 }
                 
-                if (_grid[neighborX, neighborY] == GROUND)
+                TileType type = _grid[neighborX, neighborY];
+                if (type != TileType.Air && type != TileType.Portal)
                 {
                     count++;
                 }
@@ -206,6 +264,41 @@ public class RoomGenerator : MonoBehaviour
         }
         
         return count;
+    }
+    
+    private TileType GetMajorityTileType(int x, int y)
+    {
+        int dirtCount = 0;
+        int stoneCount = 0;
+        int bedrockCount = 0;
+        
+        // Check neighbors to determine what type to become
+        for (int offsetX = -1; offsetX <= 1; offsetX++)
+        {
+            for (int offsetY = -1; offsetY <= 1; offsetY++)
+            {
+                if (offsetX == 0 && offsetY == 0)
+                    continue;
+                
+                int neighborX = x + offsetX;
+                int neighborY = y + offsetY;
+                
+                if (!IsValidPosition(neighborX, neighborY))
+                    continue;
+                
+                TileType type = _grid[neighborX, neighborY];
+                if (type == TileType.Dirt) dirtCount++;
+                else if (type == TileType.Stone) stoneCount++;
+                else if (type == TileType.Bedrock) bedrockCount++;
+            }
+        }
+        
+        // Return most common type, default to stone
+        if (bedrockCount > dirtCount && bedrockCount > stoneCount)
+            return TileType.Bedrock;
+        if (dirtCount > stoneCount)
+            return TileType.Dirt;
+        return TileType.Stone;
     }
     
     private void ClearAroundPortals()
@@ -229,9 +322,9 @@ public class RoomGenerator : MonoBehaviour
                     if (distance <= _portalClearRadius)
                     {
                         // Don't overwrite the portal itself
-                        if (_grid[x, y] != PORTAL)
+                        if (_grid[x, y] != TileType.Portal)
                         {
-                            _grid[x, y] = AIR;
+                            _grid[x, y] = TileType.Air;
                         }
                     }
                 }
@@ -247,12 +340,6 @@ public class RoomGenerator : MonoBehaviour
             return;
         }
         
-        if (_groundTile == null)
-        {
-            Debug.LogError("Ground tile reference is missing! Please assign in inspector.");
-            return;
-        }
-        
         // Clear existing tiles
         _tilemap.ClearAllTiles();
         
@@ -261,10 +348,18 @@ public class RoomGenerator : MonoBehaviour
         {
             for (int y = 0; y < _roomHeight; y++)
             {
-                if (_grid[x, y] == GROUND)
+                TileType type = _grid[x, y];
+                
+                // Skip air and portals
+                if (type == TileType.Air || type == TileType.Portal)
+                    continue;
+                
+                Vector3Int tilePosition = new Vector3Int(x, y, 0);
+                TileBase visualTile = TileDatabase.GetVisualTile(type);
+                
+                if (visualTile != null)
                 {
-                    Vector3Int tilePosition = new Vector3Int(x, y, 0);
-                    _tilemap.SetTile(tilePosition, _groundTile);
+                    _tilemap.SetTile(tilePosition, visualTile);
                 }
             }
         }
@@ -316,7 +411,7 @@ public class RoomGenerator : MonoBehaviour
         return x >= 0 && x < _roomWidth && y >= 0 && y < _roomHeight;
     }
     
-    private int CountTiles(int tileType)
+    private int CountTiles(TileType tileType)
     {
         int count = 0;
         for (int x = 0; x < _roomWidth; x++)
@@ -330,16 +425,16 @@ public class RoomGenerator : MonoBehaviour
         return count;
     }
     
-    // Public API for future terrain destruction
-    public int GetTileAt(int x, int y)
+    // Public API for terrain interaction
+    public TileType GetTileAt(int x, int y)
     {
         if (!IsValidPosition(x, y))
-            return GROUND; // Out of bounds is solid
+            return TileType.Bedrock; // Out of bounds is solid
         
         return _grid[x, y];
     }
     
-    public void SetTileAt(int x, int y, int tileType)
+    public void SetTileAt(int x, int y, TileType tileType)
     {
         if (!IsValidPosition(x, y))
             return;
@@ -348,14 +443,51 @@ public class RoomGenerator : MonoBehaviour
         
         // Update visual representation
         Vector3Int tilePosition = new Vector3Int(x, y, 0);
-        if (tileType == GROUND && _groundTile != null)
-        {
-            _tilemap.SetTile(tilePosition, _groundTile);
-        }
-        else
+        if (tileType == TileType.Air || tileType == TileType.Portal)
         {
             _tilemap.SetTile(tilePosition, null);
         }
+        else
+        {
+            TileBase visualTile = TileDatabase.GetVisualTile(tileType);
+            if (visualTile != null)
+            {
+                _tilemap.SetTile(tilePosition, visualTile);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Damage a tile at grid position. Returns true if destroyed.
+    /// </summary>
+    public bool DamageTile(int x, int y, int damageAmount)
+    {
+        if (_damageSystem == null)
+            return false;
+        
+        return _damageSystem.DamageTile(x, y, damageAmount);
+    }
+    
+    /// <summary>
+    /// Get damage percentage for visual effects (0.0 to 1.0)
+    /// </summary>
+    public float GetTileDamagePercent(int x, int y)
+    {
+        if (_damageSystem == null)
+            return 0f;
+        
+        return _damageSystem.GetDamagePercent(x, y);
+    }
+    
+    /// <summary>
+    /// Serialize this room's state for saving
+    /// </summary>
+    public SerializedRoomState SerializeState()
+    {
+        TileDamage[] damagedTiles = _damageSystem?.GetDamagedTiles() ?? new TileDamage[0];
+        
+        return RoomSerializer.SerializeRoom(_roomX, _roomY, _globalSeed, 
+            _originalGrid, _grid, damagedTiles, _roomWidth, _roomHeight);
     }
     
     /// <summary>
