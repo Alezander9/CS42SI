@@ -168,13 +168,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   selectedTier: 1
   hexInput: '#C87223'
-  inputColorPreview: {r: 0.78431374, g: 0.44705883, b: 0.13725491, a: 1}
-  hueSlider: 213
-  outputColor: {r: 0, g: 0.55946404, b: 0.68452615, a: 1}
-  outputHex: '#008FAF'
-  outputL: 0.6008844
-  outputC: 0.11019747
-  outputH: 221.00958
+  hexInputPreview: {r: 0.78431374, g: 0.44705883, b: 0.13725491, a: 1}
+  hexOutputColor: {r: 0.72799903, g: 0.36891332, b: 0, a: 1}
+  hexOutputHex: '#BA5E00'
+  hexOutputL: 0.5809171
+  hexOutputC: 0.14465573
+  hexOutputH: 54.52844
+  hueSlider: 70
+  hueOutputColor: {r: 0.6934034, g: 0.4003025, b: 0, a: 1}
+  hueOutputHex: '#B16600'
+  hueOutputL: 0.5822505
+  hueOutputC: 0.13294375
+  hueOutputH: 62.887856
 --- !u!1 &473289060
 GameObject:
   m_ObjectHideFlags: 0
