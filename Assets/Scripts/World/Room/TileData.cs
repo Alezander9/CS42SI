@@ -17,11 +17,13 @@ public enum TileType : byte // byte is 8 bits, so we can have 256 different tile
 public struct TileColorDefinition
 {
     public float Hue;           // 0-360 degrees
+    public float Chroma;        // Saturation (will be clamped to tier's valid range)
     public ColorManager.ColorTier Tier;  // Background/Foreground/Special
     
-    public TileColorDefinition(float hue, ColorManager.ColorTier tier)
+    public TileColorDefinition(float hue, float chroma, ColorManager.ColorTier tier)
     {
         Hue = hue;
+        Chroma = chroma;
         Tier = tier;
     }
 }

@@ -24,20 +24,22 @@ namespace Core.ColorSystem
         public struct TierParams
         {
             public float Lightness;
-            public float Chroma;
+            public float ChromaMin;
+            public float ChromaMax;
             
-            public TierParams(float l, float c)
+            public TierParams(float l, float cMin, float cMax)
             {
                 Lightness = l;
-                Chroma = c;
+                ChromaMin = cMin;
+                ChromaMax = cMax;
             }
         }
 
         private static readonly TierParams[] TierSettings = new TierParams[]
         {
-            new TierParams(0.28f, 0.03f),    // Tier 0: Background (dark)
-            new TierParams(0.58f, 0.15f),    // Tier 1: Foreground (medium)
-            new TierParams(0.72f, 0.28f)     // Tier 2: Special (bright)
+            new TierParams(0.28f, 0.02f, 0.05f),    // Tier 0: Background (dark, low chroma)
+            new TierParams(0.58f, 0.03f, 0.20f),    // Tier 1: Foreground (medium, variable chroma)
+            new TierParams(0.72f, 0.22f, 0.35f)     // Tier 2: Special (bright, high chroma)
         };
 
         // ============================================
@@ -45,25 +47,27 @@ namespace Core.ColorSystem
         // ============================================
         
         /// <summary>
-        /// Creates a Unity Color from a tier and hue.
-        /// Lightness and Chroma are determined by the tier.
+        /// Creates a Unity Color from a tier, hue, and chroma.
+        /// Lightness is determined by the tier; chroma is clamped to tier's valid range.
         /// </summary>
-        /// <param name="tier">Material tier (1-4)</param>
+        /// <param name="tier">Material tier (Background/Foreground/Special)</param>
         /// <param name="hue">Hue angle in degrees (0-360)</param>
+        /// <param name="chroma">Chroma value (will be clamped to tier's min/max range)</param>
         /// <returns>Unity Color object</returns>
-        public static Color CreateColorFromTier(ColorTier tier, float hue)
+        public static Color CreateColorFromTier(ColorTier tier, float hue, float chroma)
         {
             TierParams p = TierSettings[(int)tier];
-            return OKLCHToColor(p.Lightness, p.Chroma, hue);
+            float clampedChroma = Mathf.Clamp(chroma, p.ChromaMin, p.ChromaMax);
+            return OKLCHToColor(p.Lightness, clampedChroma, hue);
         }
 
         /// <summary>
         /// Takes any hex color and snaps it to the nearest tier.
-        /// Preserves hue but adjusts lightness and chroma to match tier restrictions.
+        /// Preserves hue and chroma (clamped to tier range), adjusts lightness to tier.
         /// </summary>
         /// <param name="hexColor">Hex color string (with or without #)</param>
-        /// <returns>Tuple of (clamped Color, assigned tier, preserved hue)</returns>
-        public static (Color color, ColorTier tier, float hue) ClampToNearestTier(string hexColor)
+        /// <returns>Tuple of (clamped Color, assigned tier, preserved hue, clamped chroma)</returns>
+        public static (Color color, ColorTier tier, float hue, float chroma) ClampToNearestTier(string hexColor)
         {
             // Parse hex to RGB
             Color inputColor = HexToColor(hexColor);
@@ -71,18 +75,20 @@ namespace Core.ColorSystem
             // Convert to OKLCH
             (float l, float c, float h) = ColorToOKLCH(inputColor);
             
-            // Find nearest tier by comparing lightness and chroma distance
+            // Find nearest tier by comparing lightness
             ColorTier nearestTier = FindNearestTier(l, c);
             
-            // Create color with tier's L and C, but original hue
+            // Create color with tier's L, clamped C, and original hue
             TierParams tierParams = TierSettings[(int)nearestTier];
-            Color clampedColor = OKLCHToColor(tierParams.Lightness, tierParams.Chroma, h);
+            float clampedChroma = Mathf.Clamp(c, tierParams.ChromaMin, tierParams.ChromaMax);
+            Color clampedColor = OKLCHToColor(tierParams.Lightness, clampedChroma, h);
             
-            return (clampedColor, nearestTier, h);
+            return (clampedColor, nearestTier, h, clampedChroma);
         }
 
         /// <summary>
         /// Finds which tier a given L and C value is closest to.
+        /// Uses lightness as primary factor since it defines the tier hierarchy.
         /// </summary>
         private static ColorTier FindNearestTier(float l, float c)
         {
@@ -92,8 +98,8 @@ namespace Core.ColorSystem
             for (int i = 0; i <= 2; i++)
             {
                 TierParams tier = TierSettings[i];
-                // Euclidean distance in L-C space (weighted slightly toward L for perceptual reasons)
-                float distance = Mathf.Sqrt(Mathf.Pow(l - tier.Lightness, 2) * 1.5f + Mathf.Pow(c - tier.Chroma, 2));
+                // Distance based primarily on lightness (tier's defining characteristic)
+                float distance = Mathf.Abs(l - tier.Lightness);
                 
                 if (distance < minDistance)
                 {
@@ -110,10 +116,11 @@ namespace Core.ColorSystem
         /// Default hue is 220° (cool blue-purple), but can be customized for different biomes.
         /// </summary>
         /// <param name="hue">Optional custom hue (default: 220° for cool atmospheric depth)</param>
+        /// <param name="chroma">Optional custom chroma (default: 0.03 for subtle atmosphere)</param>
         /// <returns>Background color</returns>
-        public static Color GetBackgroundColor(float hue = 220f)
+        public static Color GetBackgroundColor(float hue = 220f, float chroma = 0.03f)
         {
-            return CreateColorFromTier(ColorTier.Background, hue);
+            return CreateColorFromTier(ColorTier.Background, hue, chroma);
         }
 
         // ============================================

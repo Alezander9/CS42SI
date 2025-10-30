@@ -17,7 +17,7 @@ public static class TileDatabase
             IsDestructible = false,
             HasCollision = false,
             VisualTile = null,
-            ColorDef = new TileColorDefinition(0f, ColorManager.ColorTier.Background)
+            ColorDef = new TileColorDefinition(220f, 0.00f, ColorManager.ColorTier.Background) //  Air doesnt get rendered
         },
         
         // Dirt - warm brown
@@ -29,10 +29,10 @@ public static class TileDatabase
             IsDestructible = true,
             HasCollision = true,
             VisualTile = null,  // Assign in RoomGenerator
-            ColorDef = new TileColorDefinition(30f, ColorManager.ColorTier.Foreground)  // Warm brown/orange
+            ColorDef = new TileColorDefinition(57f, 0.13f, ColorManager.ColorTier.Foreground) 
         },
         
-        // Stone - cool gray
+        // Stone - neutral gray
         new TileProperties
         {
             Type = TileType.Stone,
@@ -41,7 +41,7 @@ public static class TileDatabase
             IsDestructible = true,
             HasCollision = true,
             VisualTile = null,  // Assign in RoomGenerator
-            ColorDef = new TileColorDefinition(220f, ColorManager.ColorTier.Foreground)  // Cool blue-gray
+            ColorDef = new TileColorDefinition(57f, 0.04f, ColorManager.ColorTier.Foreground)  // Cool neutral gray, very low saturation
         },
         
         // Bedrock - dark desaturated
@@ -50,10 +50,10 @@ public static class TileDatabase
             Type = TileType.Bedrock,
             Name = "Bedrock",
             MaxHealth = 999999,
-            IsDestructible = false,
+            IsDestructible = false, 
             HasCollision = true,
             VisualTile = null,  // Assign in RoomGenerator
-            ColorDef = new TileColorDefinition(240f, ColorManager.ColorTier.Background)  // Very dark blue-gray
+            ColorDef = new TileColorDefinition(76f, 0.02f, ColorManager.ColorTier.Background)  // Very dark, nearly achromatic
         },
         
         // Portal
@@ -65,7 +65,7 @@ public static class TileDatabase
             IsDestructible = false,
             HasCollision = false,
             VisualTile = null,  // Portals use GameObjects, not tiles
-            ColorDef = new TileColorDefinition(280f, ColorManager.ColorTier.Special)  // Purple/magenta
+            ColorDef = new TileColorDefinition(280f, 0.30f, ColorManager.ColorTier.Special)  // Vibrant purple/magenta
         }
     };
     
@@ -108,7 +108,7 @@ public static class TileDatabase
     public static Color GetTileColor(TileType type)
     {
         TileColorDefinition colorDef = _tiles[(int)type].ColorDef;
-        return ColorManager.CreateColorFromTier(colorDef.Tier, colorDef.Hue);
+        return ColorManager.CreateColorFromTier(colorDef.Tier, colorDef.Hue, colorDef.Chroma);
     }
 }
 
