@@ -283,25 +283,6 @@ public class TestSceneBootstrap : MonoBehaviour
             new TestAttackBehavior("Grounded Side Light")
         );
         
-        attackManager.RegisterAttack(
-            new AttackInput(GroundState.Grounded, AttackDirection.Up, AttackType.Light),
-            new TestAttackBehavior("Grounded Up Light")
-        );
-        
-        attackManager.RegisterAttack(
-            new AttackInput(GroundState.Grounded, AttackDirection.Neutral, AttackType.Heavy),
-            new TestAttackBehavior("Grounded Neutral Heavy")
-        );
-        
-        attackManager.RegisterAttack(
-            new AttackInput(GroundState.Airborne, AttackDirection.Neutral, AttackType.Light),
-            new TestAttackBehavior("Airborne Neutral Light")
-        );
-        
-        attackManager.RegisterAttack(
-            new AttackInput(GroundState.Airborne, AttackDirection.Down, AttackType.Heavy),
-            new TestAttackBehavior("Airborne Down Heavy (Spike)")
-        );
     }
 }
 
