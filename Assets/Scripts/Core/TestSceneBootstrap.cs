@@ -117,6 +117,10 @@ public class TestSceneBootstrap : MonoBehaviour
         // Add PlayerInput component to make it player-controlled
         var playerInput = characterObj.AddComponent<PlayerInput>();
         
+        // Add AttackManager and register test attacks
+        var attackManager = characterObj.AddComponent<AttackManager>();
+        RegisterTestAttacks(attackManager);
+        
         var controller = characterObj.GetComponent<CharacterController>();
         
         if (controller == null)
@@ -194,6 +198,10 @@ public class TestSceneBootstrap : MonoBehaviour
         var recordedInput = characterObj.AddComponent<RecordedInput>();
         recordedInput.LoadRecording(recording);
         
+        // Add AttackManager and register test attacks
+        var attackManager = characterObj.AddComponent<AttackManager>();
+        RegisterTestAttacks(attackManager);
+        
         // Make ghost semi-transparent
         var spriteRenderer = characterObj.GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
@@ -253,6 +261,47 @@ public class TestSceneBootstrap : MonoBehaviour
                 }
             }
         }
+    }
+    
+    /// <summary>
+    /// Registers test attacks for proof of concept testing.
+    /// In a real game, this would be replaced by a proper attack set/class system.
+    /// </summary>
+    private void RegisterTestAttacks(AttackManager attackManager)
+    {
+        if (attackManager == null)
+            return;
+        
+        // Register all possible attack combinations with test behaviors
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Grounded, AttackDirection.Neutral, AttackType.Light),
+            new TestAttackBehavior("Grounded Neutral Light")
+        );
+        
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Grounded, AttackDirection.Side, AttackType.Light),
+            new TestAttackBehavior("Grounded Side Light")
+        );
+        
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Grounded, AttackDirection.Up, AttackType.Light),
+            new TestAttackBehavior("Grounded Up Light")
+        );
+        
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Grounded, AttackDirection.Neutral, AttackType.Heavy),
+            new TestAttackBehavior("Grounded Neutral Heavy")
+        );
+        
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Airborne, AttackDirection.Neutral, AttackType.Light),
+            new TestAttackBehavior("Airborne Neutral Light")
+        );
+        
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Airborne, AttackDirection.Down, AttackType.Heavy),
+            new TestAttackBehavior("Airborne Down Heavy (Spike)")
+        );
     }
 }
 

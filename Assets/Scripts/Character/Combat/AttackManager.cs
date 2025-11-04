@@ -44,9 +44,6 @@ public class AttackManager : MonoBehaviour
             enabled = false;
             return;
         }
-        
-        // Register some test attacks for proof of concept
-        RegisterTestAttacks();
     }
     
     private void FixedUpdate()
@@ -161,43 +158,6 @@ public class AttackManager : MonoBehaviour
     public void RegisterAttack(AttackInput input, IAttackBehavior behavior)
     {
         _attackMap[input] = behavior;
-    }
-    
-    /// <summary>
-    /// For testing: registers some basic attacks that just log to console.
-    /// </summary>
-    private void RegisterTestAttacks()
-    {
-        // Register all possible attack combinations with test behaviors
-        RegisterAttack(
-            new AttackInput(GroundState.Grounded, AttackDirection.Neutral, AttackType.Light),
-            new TestAttackBehavior("Grounded Neutral Light")
-        );
-        
-        RegisterAttack(
-            new AttackInput(GroundState.Grounded, AttackDirection.Side, AttackType.Light),
-            new TestAttackBehavior("Grounded Side Light")
-        );
-        
-        RegisterAttack(
-            new AttackInput(GroundState.Grounded, AttackDirection.Up, AttackType.Light),
-            new TestAttackBehavior("Grounded Up Light")
-        );
-        
-        RegisterAttack(
-            new AttackInput(GroundState.Grounded, AttackDirection.Neutral, AttackType.Heavy),
-            new TestAttackBehavior("Grounded Neutral Heavy")
-        );
-        
-        RegisterAttack(
-            new AttackInput(GroundState.Airborne, AttackDirection.Neutral, AttackType.Light),
-            new TestAttackBehavior("Airborne Neutral Light")
-        );
-        
-        RegisterAttack(
-            new AttackInput(GroundState.Airborne, AttackDirection.Down, AttackType.Heavy),
-            new TestAttackBehavior("Airborne Down Heavy (Spike)")
-        );
     }
     
     public bool IsAttacking() => _currentAttack != null;
