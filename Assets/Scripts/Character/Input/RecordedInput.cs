@@ -101,8 +101,6 @@ public class RecordedInput : MonoBehaviour, ICharacterInput
         _currentFrame = 0;
         _currentInput = InputState.Zero;
         _previousInput = InputState.Zero;
-        
-        Debug.Log($"Started playback of '{_recording.recordingName}' ({_recording.FrameCount} frames)");
     }
     
     /// <summary>

@@ -70,8 +70,6 @@ public class InputRecorder : MonoBehaviour
         _isRecording = true;
         _frameNumber = 0;
         _startTime = Time.time;
-        
-        Debug.Log($"Started recording '{_currentRecording.recordingName}'");
     }
     
     /// <summary>
@@ -88,8 +86,6 @@ public class InputRecorder : MonoBehaviour
         _isRecording = false;
         float completionTime = Time.time - _startTime;
         _currentRecording.Finalize(completionTime);
-        
-        Debug.Log($"Stopped recording '{_currentRecording.recordingName}' - {_frameNumber} frames, {completionTime:F2}s");
         
         InputRecording recording = _currentRecording;
         _currentRecording = null;
@@ -137,8 +133,6 @@ public class InputRecorder : MonoBehaviour
         // Serialize to JSON
         string json = JsonUtility.ToJson(recording, true);
         System.IO.File.WriteAllText(fullPath, json);
-        
-        Debug.Log($"Saved recording to: {fullPath}");
     }
     
     /// <summary>
@@ -161,7 +155,6 @@ public class InputRecorder : MonoBehaviour
             Debug.LogError($"Loaded recording failed validation: {filepath}");
         }
         
-        Debug.Log($"Loaded recording '{recording.recordingName}' ({recording.FrameCount} frames)");
         return recording;
     }
     

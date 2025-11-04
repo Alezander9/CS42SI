@@ -42,9 +42,6 @@ public class Portal : MonoBehaviour
                 float timeSinceLastTeleport = Time.time - lastTeleportTime;
                 if (timeSinceLastTeleport < _teleportCooldown)
                 {
-                    // Still on cooldown
-                    float remainingCooldown = _teleportCooldown - timeSinceLastTeleport;
-                    Debug.Log($"Portal on cooldown: {remainingCooldown:F1}s remaining");
                     return;
                 }
             }

@@ -57,8 +57,6 @@ public class WorldManager : MonoBehaviour
         
         // Link portals between adjacent rooms
         LinkPortals();
-        
-        Debug.Log($"World initialized at room {_currentRoomX} with rooms [{_currentRoomX - 1}, {_currentRoomX}, {_currentRoomX + 1}] (current at origin)");
     }
     
     /// <summary>
@@ -120,8 +118,6 @@ public class WorldManager : MonoBehaviour
                     cam.transform.position = camPos;
                 }
             }
-            
-            Debug.Log($"Teleported player to room {newRoomX} at {newDestination}");
         }
     }
     
@@ -178,8 +174,6 @@ public class WorldManager : MonoBehaviour
         
         // Re-link portals
         LinkPortals();
-        
-        Debug.Log($"Shifted world: room {_currentRoomX} now at origin. Loaded rooms [{_currentRoomX - 1}, {_currentRoomX}, {_currentRoomX + 1}]");
     }
     
     private void GenerateRoomAtPosition(int roomX, Vector3 worldPosition)
@@ -197,9 +191,6 @@ public class WorldManager : MonoBehaviour
         // Create room with optional saved state
         RoomInstance room = new RoomInstance(roomX, worldPosition, _roomPrefab, _roomsContainer, _globalSeed, savedState);
         _loadedRooms[roomX] = room;
-        
-        string stateInfo = savedState != null ? " (loaded from save)" : " (fresh generation)";
-        Debug.Log($"Generated room {roomX} at world position {worldPosition}{stateInfo}");
     }
     
     private void UnloadRoom(int roomX)
@@ -216,8 +207,6 @@ public class WorldManager : MonoBehaviour
         
         room.Destroy();
         _loadedRooms.Remove(roomX);
-        
-        Debug.Log($"Unloaded and saved room {roomX}");
     }
     
     private string GetRoomSavePath(int roomX)

@@ -36,11 +36,9 @@ public class TestSceneBootstrap : MonoBehaviour
         {
             // Initialize world (generates 3 rooms)
             _worldManager.InitializeWorld();
-            Debug.Log("World initialized via WorldManager");
             
             // Get spawn position from current room's center portal
             _playerSpawnPosition = _worldManager.GetCurrentRoomCenterPortalPosition();
-            Debug.Log($"Player spawn position set to center portal: {_playerSpawnPosition}");
         }
         else
         {
@@ -49,7 +47,6 @@ public class TestSceneBootstrap : MonoBehaviour
             if (_roomGenerator != null)
             {
                 _roomGenerator.GenerateRoom();
-                Debug.Log("Room generated via standalone RoomGenerator");
                 
                 Vector3[] portals = _roomGenerator.GetPortalWorldPositions();
                 _playerSpawnPosition = portals[2]; // Index 2 is center portal
@@ -76,7 +73,6 @@ public class TestSceneBootstrap : MonoBehaviour
             Vector3 cameraStartPos = _cameraManager.transform.position;
             var followCam = new FollowPlayerCamera(_playerCharacter.transform, cameraStartPos);
             _cameraManager.SetController(followCam);
-            Debug.Log("Camera set to follow player");
         }
     }
 
@@ -125,7 +121,6 @@ public class TestSceneBootstrap : MonoBehaviour
         }
 
         _playerCharacter = controller;
-        Debug.Log($"Player spawned at {position}");
         
         return controller;
     }
@@ -149,7 +144,6 @@ public class TestSceneBootstrap : MonoBehaviour
         {
             _recorder = player.gameObject.AddComponent<InputRecorder>();
             _recorder.StartRecording(recordingName);
-            Debug.Log($"Started recording player input as '{recordingName}'");
         }
         
         return player;
@@ -210,8 +204,6 @@ public class TestSceneBootstrap : MonoBehaviour
             return null;
         }
         
-        Debug.Log($"Ghost spawned at {position} with recording '{recording.recordingName}' ({recording.FrameCount} frames)");
-        
         return controller;
     }
     
@@ -239,7 +231,6 @@ public class TestSceneBootstrap : MonoBehaviour
                 {
                     _recorder = _playerCharacter.gameObject.AddComponent<InputRecorder>();
                     _recorder.StartRecording("Quick Test");
-                    Debug.Log("Press R again to stop recording and spawn ghost");
                 }
                 else
                 {

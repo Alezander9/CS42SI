@@ -41,9 +41,6 @@ public class RoomInstance
         
         // Find and setup portal components
         SetupPortals();
-        
-        string stateInfo = savedState != null ? " (restored from save)" : "";
-        Debug.Log($"Room {roomX} bounds: Center={WorldBounds.center}, Size={WorldBounds.size}{stateInfo}");
     }
     
     private void SetupPortals()

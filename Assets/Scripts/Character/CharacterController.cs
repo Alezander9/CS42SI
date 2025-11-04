@@ -81,10 +81,6 @@ public class CharacterController : MonoBehaviour
     private bool _inputJumpHeld;
     private bool _inputJumpReleased;
     private bool _inputDashPressed;
-    
-    // Debug logging
-    private float _debugLogTimer = 0f;
-    private const float DEBUG_LOG_INTERVAL = 0.5f; // Log twice per second
 
     private Transform _transform;
     private Rigidbody2D _rb;
@@ -179,9 +175,6 @@ public class CharacterController : MonoBehaviour
 
         Move();
         
-        // Periodic debug logging
-        DebugLogPositionAndVelocity();
-        
         // Clear one-frame input flags
         ClearInputFlags();
     }
@@ -191,7 +184,6 @@ public class CharacterController : MonoBehaviour
         // Process jump press event
         if (_inputJumpPressed)
         {
-            print($"[TEMPLOG] OnJumpPressed - IsOnWall={IsOnWall()}, V={_verticalSpeed:F2}, canWallJump={_canWallJump}");
             _jumpBufferTimeLeft = _jumpBuffer;
             _wallGrabJumpTimer = _wallGrabJumpApexTime;
 
@@ -204,9 +196,7 @@ public class CharacterController : MonoBehaviour
         {
             if(_verticalSpeed > _minJumpSpeed)
             {
-                float vBefore = _verticalSpeed;
                 _verticalSpeed = _minJumpSpeed;
-                LogMovementFunction("OnJumpReleased", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"minJumpSpeed={_minJumpSpeed:F2}");
             }
         }
         
@@ -227,23 +217,6 @@ public class CharacterController : MonoBehaviour
         _inputJumpPressed = false;
         _inputJumpReleased = false;
         _inputDashPressed = false;
-    }
-    
-    private void DebugLogPositionAndVelocity()
-    {
-        _debugLogTimer += Time.deltaTime;
-        
-        if (_debugLogTimer >= DEBUG_LOG_INTERVAL)
-        {
-            print($"[TEMPLOG] Periodic - Position: {_transform.position}, Velocity: ({_horizontalSpeed:F2}, {_verticalSpeed:F2}), IsOnWall: {IsOnWall()}");
-            _debugLogTimer = 0f;
-        }
-    }
-    
-    private void LogMovementFunction(string functionName, float hSpeedBefore, float vSpeedBefore, float hSpeedAfter, float vSpeedAfter, string extraInfo = "")
-    {
-        string extra = string.IsNullOrEmpty(extraInfo) ? "" : $" | {extraInfo}";
-        print($"[TEMPLOG] {functionName} - H: {hSpeedBefore:F2} → {hSpeedAfter:F2}, V: {vSpeedBefore:F2} → {vSpeedAfter:F2}{extra}");
     }
 
     public Vector2 GetVelocity()
@@ -315,18 +288,14 @@ public class CharacterController : MonoBehaviour
 
         if (CanJump() && downColl)
         {
-            float vBefore = _verticalSpeed;
             _verticalSpeed = _maxJumpSpeed;
-            LogMovementFunction("Jump(ground)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"maxJumpSpeed={_maxJumpSpeed:F2}, jumpBuffer={_jumpBufferTimeLeft:F3}");
             _jumpBufferTimeLeft = 0; // Consume jump buffer
             return; // Don't check coyote jump if we already jumped from ground
         }
 
         if (CanJump() && CanCoyoteJump())
         {
-            float vBefore = _verticalSpeed;
             _verticalSpeed = _maxJumpSpeed;
-            LogMovementFunction("Jump(coyote)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"maxJumpSpeed={_maxJumpSpeed:F2}, jumpBuffer={_jumpBufferTimeLeft:F3}");
             _coyoteJumpTimeLeft = 0;
             _jumpBufferTimeLeft = 0; // Consume jump buffer
         }
@@ -436,11 +405,8 @@ public class CharacterController : MonoBehaviour
         {
             if(_inputJumpHeld && _canWallJump && collision.LastHit)
             {
-                float hBefore = _horizontalSpeed;
-                float vBefore = _verticalSpeed;
                 _horizontalSpeed = _wallJumpHorizontalSpeed * -collision.RaycastInfo.RayDirection.x;
                 _verticalSpeed = _wallJumpSpeed;
-                LogMovementFunction("WallJump", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJumpH={_wallJumpHorizontalSpeed:F2}, wallJumpSpeed={_wallJumpSpeed:F2}, height={_wallJumpHeight:F2}");
                 _wallStickTimeLeft = _wallStickTime;
                 _canWallJump = false;
                 _jumpBufferTimeLeft = 0; // Consume jump buffer
@@ -457,11 +423,8 @@ public class CharacterController : MonoBehaviour
             // Priority 1: Jump OFF the wall (away from wall)
             if(input != 0 && collision.RaycastInfo.RayDirection.x != input)
             {
-                float hBefore = _horizontalSpeed;
-                float vBefore = _verticalSpeed;
                 _horizontalSpeed = _wallJumpHorizontalSpeed * input;
                 _verticalSpeed = _wallJumpSpeed;
-                LogMovementFunction("WallGrabJump(off)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"wallJumpH={_wallJumpHorizontalSpeed:F2}, wallJumpSpeed={_wallJumpSpeed:F2}, height={_wallJumpHeight:F2}");
                 _jumpBufferTimeLeft = 0; // Consume jump buffer
                 return;
             }
@@ -469,9 +432,7 @@ public class CharacterController : MonoBehaviour
             // Priority 2: Small jump UP while still on wall
             if (_wallGrabJumpTimer > 0)
             {
-                float vBefore = _verticalSpeed;
                 _verticalSpeed = _wallGrabJumpSpeed;
-                LogMovementFunction("WallGrabJump(up)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"wallGrabJumpSpeed={_wallGrabJumpSpeed:F2}");
                 _jumpBufferTimeLeft = 0; // Consume jump buffer
             }
         }
@@ -488,11 +449,8 @@ public class CharacterController : MonoBehaviour
         {
             if(collision.FirstHit && collision.HitCount == 1)
             {
-                float hBefore = _horizontalSpeed;
-                float vBefore = _verticalSpeed;
                 _verticalSpeed = _topEdgeClimbSpeed;
                 _horizontalSpeed = _topEdgeClimbHorizontalSpeed * collision.RaycastInfo.RayDirection.x;
-                LogMovementFunction("WallGrab(edgeClimb)", hBefore, vBefore, _horizontalSpeed, _verticalSpeed, $"edgeClimbH={_topEdgeClimbHorizontalSpeed:F2}, edgeClimbSpeed={_topEdgeClimbSpeed:F2}, height={_topEdgeClimbHeight:F2}");
                 return;
             }
 
@@ -530,9 +488,7 @@ public class CharacterController : MonoBehaviour
         {
             if(!_dashJustEnded)
             {
-                float vBefore = _verticalSpeed;
                 _verticalSpeed = _ySpeedAfterDash * inputY;
-                LogMovementFunction("Dash(end)", _horizontalSpeed, vBefore, _horizontalSpeed, _verticalSpeed, $"ySpeedAfterDash={_ySpeedAfterDash:F2}, inputY={inputY:F2}");
                 _dashJustEnded = true;
             }
 
@@ -544,11 +500,8 @@ public class CharacterController : MonoBehaviour
         var distance = Vector2.Distance(_transform.position, hit);
         var clampDistance = Mathf.Clamp(distance, 0, _dashDistance);
         var velocity = clampDistance / _dashDuration * dir;
-        float hBefore = _horizontalSpeed;
-        float vBefore2 = _verticalSpeed;
         _horizontalSpeed = velocity.x;
         _verticalSpeed = velocity.y;
-        LogMovementFunction("Dash(active)", hBefore, vBefore2, _horizontalSpeed, _verticalSpeed, $"dir=({dir.x:F2}, {dir.y:F2}), dist={clampDistance:F2}");
         _canDash = false;
         _dashJustEnded = false;
     }

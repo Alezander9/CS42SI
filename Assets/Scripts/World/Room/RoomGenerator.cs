@@ -64,8 +64,6 @@ public class RoomGenerator : MonoBehaviour
         TileDatabase.SetVisualTile(TileType.Stone, _baseGroundTile);
         TileDatabase.SetVisualTile(TileType.Bedrock, _baseGroundTile);
         
-        Debug.Log($"Generating room ({_roomX}, {_roomY}) with seed {combinedSeed}");
-        
         // Phase 1: Initialize grid with Perlin noise
         InitializeGridWithNoise(combinedSeed);
         
@@ -103,8 +101,6 @@ public class RoomGenerator : MonoBehaviour
         
         // Phase 9: Spawn portal sprites
         SpawnPortalSprites();
-        
-        Debug.Log($"Room generation complete: {CountTiles(TileType.Stone)} stone, {CountTiles(TileType.Dirt)} dirt, {CountTiles(TileType.Air)} air");
     }
     
     private void InitializeGridWithNoise(int seed)
@@ -365,8 +361,6 @@ public class RoomGenerator : MonoBehaviour
                 }
             }
         }
-        
-        Debug.Log($"Tilemap built with {_roomWidth}x{_roomHeight} tiles");
     }
     
     private void SpawnPortalSprites()
@@ -403,8 +397,6 @@ public class RoomGenerator : MonoBehaviour
             
             GameObject portal = Instantiate(_portalPrefab, worldPos, Quaternion.identity, transform);
             portal.name = $"Portal_{i}_{(i == 0 ? "Left" : i == 1 ? "Right" : "Center")}";
-            
-            Debug.Log($"Spawned portal {i} at grid ({gridPos.x}, {gridPos.y}) -> world {worldPos}");
         }
     }
     

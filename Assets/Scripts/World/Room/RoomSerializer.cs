@@ -51,8 +51,6 @@ public static class RoomSerializer
         
         string json = JsonUtility.ToJson(state, true);
         File.WriteAllText(savePath, json);
-        
-        Debug.Log($"Saved room {state.RoomX} ({state.ModifiedTiles.Length} changes, {state.DamagedTiles.Length} damaged tiles)");
     }
     
     /// <summary>
