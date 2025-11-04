@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1656559284796907199}
   - component: {fileID: 1461801526575101963}
   - component: {fileID: 3395529384546939014}
+  - component: {fileID: 4202865531287581313}
   m_Layer: 0
   m_Name: Character
   m_TagString: Player
@@ -272,3 +273,15 @@ MonoBehaviour:
   _ySpeedAfterDash: 10
   _minFallSpeed: 8
   _maxFallSpeed: 40
+--- !u!114 &4202865531287581313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6268221509407489594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f24bd2fbfb181cf4da56d3de8966d991, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

@@ -17,6 +17,8 @@ public class PlayerInput : MonoBehaviour, ICharacterInput
     private bool _jumpPressedThisFrame;
     private bool _jumpReleasedThisFrame;
     private bool _dashPressedThisFrame;
+    private bool _lightAttackPressedThisFrame;
+    private bool _heavyAttackPressedThisFrame;
     
     // Track if we need to clear flags (set after they've been read)
     private bool _clearFlagsNextFixedUpdate;
@@ -32,6 +34,8 @@ public class PlayerInput : MonoBehaviour, ICharacterInput
         _inputActions.Player.Jump.performed += JumpPerformed;
         _inputActions.Player.Jump.canceled += JumpCanceled;
         _inputActions.Player.Dash.performed += DashPerformed;
+        _inputActions.Player.LightAttack.performed += LightAttackPerformed;
+        _inputActions.Player.HeavyAttack.performed += HeavyAttackPerformed;
     }
 
     private void DashPerformed(InputAction.CallbackContext context)
@@ -52,6 +56,16 @@ public class PlayerInput : MonoBehaviour, ICharacterInput
         onJumpPressed?.Invoke();
     }
     
+    private void LightAttackPerformed(InputAction.CallbackContext context)
+    {
+        _lightAttackPressedThisFrame = true;
+    }
+    
+    private void HeavyAttackPerformed(InputAction.CallbackContext context)
+    {
+        _heavyAttackPressedThisFrame = true;
+    }
+    
     private void FixedUpdate()
     {
         // Clear flags from previous frame if they were set
@@ -60,11 +74,14 @@ public class PlayerInput : MonoBehaviour, ICharacterInput
             _jumpPressedThisFrame = false;
             _jumpReleasedThisFrame = false;
             _dashPressedThisFrame = false;
+            _lightAttackPressedThisFrame = false;
+            _heavyAttackPressedThisFrame = false;
             _clearFlagsNextFixedUpdate = false;
         }
         
         // Mark for clearing next FixedUpdate if any flags are set
-        if (_jumpPressedThisFrame || _jumpReleasedThisFrame || _dashPressedThisFrame)
+        if (_jumpPressedThisFrame || _jumpReleasedThisFrame || _dashPressedThisFrame || 
+            _lightAttackPressedThisFrame || _heavyAttackPressedThisFrame)
         {
             _clearFlagsNextFixedUpdate = true;
         }
@@ -80,7 +97,9 @@ public class PlayerInput : MonoBehaviour, ICharacterInput
             GrabHeld = _inputActions.Player.WallGrab.inProgress,
             JumpPressed = _jumpPressedThisFrame,
             JumpReleased = _jumpReleasedThisFrame,
-            DashPressed = _dashPressedThisFrame
+            DashPressed = _dashPressedThisFrame,
+            LightAttackPressed = _lightAttackPressedThisFrame,
+            HeavyAttackPressed = _heavyAttackPressedThisFrame
         };
     }
 
@@ -89,6 +108,8 @@ public class PlayerInput : MonoBehaviour, ICharacterInput
         _inputActions.Player.Jump.performed -= JumpPerformed;
         _inputActions.Player.Jump.canceled -= JumpCanceled;
         _inputActions.Player.Dash.performed -= DashPerformed;
+        _inputActions.Player.LightAttack.performed -= LightAttackPerformed;
+        _inputActions.Player.HeavyAttack.performed -= HeavyAttackPerformed;
     }
 }
 

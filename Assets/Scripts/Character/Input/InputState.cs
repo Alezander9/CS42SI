@@ -24,6 +24,10 @@ public struct InputState
     public bool JumpReleased;
     public bool DashPressed;
     
+    // Attack inputs (one-frame events)
+    public bool LightAttackPressed;
+    public bool HeavyAttackPressed;
+    
     /// <summary>
     /// Returns a default/zero input state (no input).
     /// </summary>
@@ -35,7 +39,9 @@ public struct InputState
         GrabHeld = false,
         JumpPressed = false,
         JumpReleased = false,
-        DashPressed = false
+        DashPressed = false,
+        LightAttackPressed = false,
+        HeavyAttackPressed = false
     };
 }
 
