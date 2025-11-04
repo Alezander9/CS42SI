@@ -61,6 +61,12 @@ public class TestSceneBootstrap : MonoBehaviour
         {
             SpawnPlayer();
             SetupCamera();
+            
+            // Register player with WorldManager if it exists
+            if (_worldManager != null && _playerCharacter != null)
+            {
+                _worldManager.SetPlayerCharacter(_playerCharacter.transform);
+            }
         }
     }
     

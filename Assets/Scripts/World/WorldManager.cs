@@ -60,6 +60,15 @@ public class WorldManager : MonoBehaviour
     }
     
     /// <summary>
+    /// Set the player-controlled character that the world should track and follow.
+    /// Call this after spawning the player.
+    /// </summary>
+    public void SetPlayerCharacter(Transform playerTransform)
+    {
+        _playerTransform = playerTransform;
+    }
+    
+    /// <summary>
     /// Get the world position of the center portal in the current room for player spawning.
     /// </summary>
     public Vector3 GetCurrentRoomCenterPortalPosition()
@@ -77,33 +86,34 @@ public class WorldManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Called when player enters a portal. Handles teleportation and room shifting.
+    /// Called when any character enters a portal. Handles teleportation and room shifting.
+    /// Only shifts the world if the player-controlled character enters.
     /// </summary>
-    public void OnPortalEntered(Portal portal, Transform player)
+    public void OnPortalEntered(Portal portal, Transform character)
     {
-        _playerTransform = player;
-        
         if (portal.LinkedPortal == null)
         {
             Debug.LogWarning($"Portal {portal.Type} in room {portal.OwnerRoom.RoomX} has no linked portal!");
             return;
         }
         
-        // Shift rooms if entering edge portal
+        // Check if this is the player-controlled character
+        bool isPlayer = character == _playerTransform;
+        
+        // Calculate destination
         int newRoomX = portal.LinkedPortal.OwnerRoom.RoomX;
-        if (newRoomX != _currentRoomX)
+        Vector3 exitDirection = portal.LinkedPortal.Type == Portal.PortalType.Left ? Vector3.right : Vector3.left;
+        Vector3 offsetFromPortal = exitDirection * _portalExitOffset;
+        
+        // Shift world and move camera only if player is entering
+        if (isPlayer && newRoomX != _currentRoomX)
         {
-            // Calculate player's offset from destination portal before shift
-            Vector3 destinationPortal = portal.LinkedPortal.transform.position;
-            Vector3 exitDirection = portal.LinkedPortal.Type == Portal.PortalType.Left ? Vector3.right : Vector3.left;
-            Vector3 offsetFromPortal = exitDirection * _portalExitOffset;
-            
             // Shift world so new room is at origin
             ShiftWorldToRoom(newRoomX);
             
             // Teleport player to linked portal (now at new position after shift)
             Vector3 newDestination = portal.LinkedPortal.transform.position + offsetFromPortal;
-            player.position = newDestination;
+            character.position = newDestination;
             
             // Instantly move camera to player position (no lerp)
             CameraManager cameraManager = FindObjectOfType<CameraManager>();
@@ -118,6 +128,12 @@ public class WorldManager : MonoBehaviour
                     cam.transform.position = camPos;
                 }
             }
+        }
+        else if (!isPlayer)
+        {
+            // For recorded characters, just teleport them without shifting the world
+            Vector3 newDestination = portal.LinkedPortal.transform.position + offsetFromPortal;
+            character.position = newDestination;
         }
     }
     
