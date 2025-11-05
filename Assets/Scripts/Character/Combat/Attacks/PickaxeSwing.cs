@@ -6,9 +6,9 @@ public class PickaxeSwing : IAttackBehavior
 {
     private Hitbox _hitbox;
     private int _hitboxStartFrame = 2;
-    private int _hitboxEndFrame = 5;
+    private int _hitboxEndFrame = 10;
     
-    public int DurationFrames => 8;
+    public int DurationFrames => 14;
     public bool CanBeInterrupted => false;
     
     public bool CanExecute(AttackContext context)
@@ -49,7 +49,7 @@ public class PickaxeSwing : IAttackBehavior
             }
             
             // Show debug visualization
-            _hitbox.ShowDebugVisual(new Color(1f, 0f, 0f, 1f));
+            _hitbox.ShowDebugVisual();
         }
         else
         {

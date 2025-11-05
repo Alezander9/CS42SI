@@ -166,27 +166,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 229cb924aaa1d4e40b4e9b4918726d86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectedTier: 1
+  selectedTier: 2
   hexInput: 806959
   hexInputPreview: {r: 0.5019608, g: 0.4117647, b: 0.34901962, a: 1}
-  hexOutputColor: {r: 0.5506918, g: 0.45871404, b: 0.3949103, a: 1}
-  hexOutputHex: '#8C7565'
-  hexOutputL: 0.58
-  hexOutputC: 0.038113937
-  hexOutputH: 56.609886
-  hueSlider: 52
-  chromaSlider: 0.065
-  manualOutputColor: {r: 0.6024219, g: 0.43764594, b: 0.33880335, a: 1}
-  manualOutputHex: '#9A7056'
-  manualOutputL: 0.58
-  manualOutputC: 0.06499997
-  manualOutputH: 52.000095
+  hexOutputColor: {r: 1, g: 0.45397675, b: 0, a: 1}
+  hexOutputHex: '#FF7400'
+  hexOutputL: 0.7141177
+  hexOutputC: 0.19398962
+  hexOutputH: 48.163822
+  hueSlider: 29
+  chromaSlider: 0.327
+  manualOutputColor: {r: 1, g: 0, b: 0, a: 1}
+  manualOutputHex: '#FF0000'
+  manualOutputL: 0.6279554
+  manualOutputC: 0.25768325
+  manualOutputH: 29.233896
   showChromaComparison: 1
-  chromaLow: {r: 0.5387796, g: 0.46170646, b: 0.41694695, a: 1}
-  chromaMid: {r: 0.68558455, g: 0.3944047, b: 0.20126857, a: 1}
-  chromaHigh: {r: 0.81349736, g: 0.2824062, b: 0, a: 1}
-  tierLightness: L = 0.58
-  tierChromaRange: C = 0.03 to 0.20
+  chromaLow: {r: 1, g: 0.36395884, b: 0.29698533, a: 1}
+  chromaMid: {r: 1, g: 0.13024817, b: 0.1033048, a: 1}
+  chromaHigh: {r: 1, g: 0, b: 0, a: 1}
+  tierLightness: L = 0.72
+  tierChromaRange: C = 0.22 to 0.35
 --- !u!1 &473289060
 GameObject:
   m_ObjectHideFlags: 0
@@ -410,6 +410,7 @@ MonoBehaviour:
   _recordPlayer: 0
   _ghostSpawnOffset: {x: 0, y: 0, z: 0}
   _ghostColor: {r: 1, g: 1, b: 1, a: 0.5}
+  _showHitboxGizmos: 1
 --- !u!4 &1944288305
 Transform:
   m_ObjectHideFlags: 0

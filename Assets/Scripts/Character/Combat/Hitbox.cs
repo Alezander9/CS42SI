@@ -24,6 +24,7 @@ public class Hitbox
     
     // Static debug flag (can be toggled globally)
     public static bool ShowDebugVisuals = false;
+    public static Color DebugVisualColor = Color.red;
     
     private Transform _owner;
     private int _facingDirection;
@@ -127,7 +128,7 @@ public class Hitbox
     /// Creates or updates a visible mesh representation of the hitbox for debugging.
     /// Call this each frame while the hitbox should be visible.
     /// </summary>
-    public void ShowDebugVisual(Color color)
+    public void ShowDebugVisual()
     {
         if (!ShowDebugVisuals)
         {
@@ -138,13 +139,15 @@ public class Hitbox
         // Create visual if it doesn't exist
         if (_debugVisual == null)
         {
-            _debugVisual = CreateDebugMesh(color);
+            _debugVisual = CreateDebugMesh();
         }
         
-        // Update position
+        // Update position (z = -5 to render in front)
         if (_debugVisual != null)
         {
-            _debugVisual.transform.position = GetWorldPosition();
+            Vector3 pos = GetWorldPosition();
+            pos.z = -5f;
+            _debugVisual.transform.position = pos;
         }
     }
     
@@ -160,7 +163,7 @@ public class Hitbox
         }
     }
     
-    private GameObject CreateDebugMesh(Color color)
+    private GameObject CreateDebugMesh()
     {
         GameObject visual = null;
         
@@ -189,23 +192,16 @@ public class Hitbox
             // Remove collider (we don't want the visual to interact with physics)
             Object.Destroy(visual.GetComponent<Collider>());
             
-            // Setup material with transparency
             var renderer = visual.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                // Create transparent material
-                Material mat = new Material(Shader.Find("Standard"));
-                mat.color = new Color(color.r, color.g, color.b, 0.5f);
-                mat.SetFloat("_Mode", 3); // Transparent mode
-                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                mat.SetInt("_ZWrite", 0);
-                mat.DisableKeyword("_ALPHATEST_ON");
-                mat.EnableKeyword("_ALPHABLEND_ON");
-                mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                mat.renderQueue = 3000;
-                
-                renderer.material = mat;
+                Material hitboxMat = Resources.Load<Material>("Materials/HitboxMaterial");
+                if (hitboxMat != null)
+                {
+                    Material mat = new Material(hitboxMat);
+                    mat.color = DebugVisualColor;
+                    renderer.material = mat;
+                }
             }
         }
         
