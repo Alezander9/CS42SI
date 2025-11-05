@@ -18,6 +18,9 @@ public class TestSceneBootstrap : MonoBehaviour
     [SerializeField] private Vector3 _ghostSpawnOffset = new Vector3(0, 0, 0);
     [SerializeField] private Color _ghostColor = new Color(1, 1, 1, 0.5f);
     
+    [Header("Debug Settings")]
+    [SerializeField] private bool _showHitboxGizmos = true;
+    
     private GameObject _characterPrefab;
     private CharacterController _playerCharacter;
     private InputRecorder _recorder;
@@ -28,6 +31,9 @@ public class TestSceneBootstrap : MonoBehaviour
     private void Start()
     {
         LoadPrefab();
+        
+        // Set debug flags
+        Hitbox.ShowDebugVisuals = _showHitboxGizmos;
         
         // Check if using WorldManager or standalone RoomGenerator
         _worldManager = FindObjectOfType<WorldManager>();
@@ -272,17 +278,27 @@ public class TestSceneBootstrap : MonoBehaviour
         if (attackManager == null)
             return;
         
-        // Register all possible attack combinations with test behaviors
+        // Register pickaxe swing for grounded neutral light
         attackManager.RegisterAttack(
             new AttackInput(GroundState.Grounded, AttackDirection.Neutral, AttackType.Light),
-            new TestAttackBehavior("Grounded Neutral Light")
+            new PickaxeSwing()
         );
         
+        // Register other test attacks
         attackManager.RegisterAttack(
             new AttackInput(GroundState.Grounded, AttackDirection.Side, AttackType.Light),
             new TestAttackBehavior("Grounded Side Light")
         );
         
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Grounded, AttackDirection.Up, AttackType.Light),
+            new TestAttackBehavior("Grounded Up Light")
+        );
+        
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Airborne, AttackDirection.Neutral, AttackType.Light),
+            new TestAttackBehavior("Airborne Neutral Light")
+        );
     }
 }
 

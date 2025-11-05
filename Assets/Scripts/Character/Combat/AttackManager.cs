@@ -139,17 +139,8 @@ public class AttackManager : MonoBehaviour
         InputState input = _input.GetInputState();
         _context.InputDirection = new Vector2(input.Horizontal, input.Vertical);
         
-        // Determine facing based on velocity
-        Vector2 vel = _character.GetVelocity();
-        if (Mathf.Abs(vel.x) > 0.1f)
-        {
-            _context.FacingDirection = vel.x > 0 ? 1 : -1;
-        }
-        else
-        {
-            // Default to right if not moving
-            _context.FacingDirection = 1;
-        }
+        // Get facing direction from character controller
+        _context.FacingDirection = _character.GetFacingDirection();
     }
     
     /// <summary>

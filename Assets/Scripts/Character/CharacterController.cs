@@ -72,6 +72,7 @@ public class CharacterController : MonoBehaviour
     private bool _dashJustEnded;
     private bool _canDash = false;
     private bool _canLand = false;
+    private int _facingDirection = 1; // 1 = right, -1 = left
     
     // Input state variables (sampled in Update, used in FixedUpdate)
     private float _inputHorizontal;
@@ -233,6 +234,11 @@ public class CharacterController : MonoBehaviour
     {
         return _furthestPoint;
     }
+    
+    public int GetFacingDirection()
+    {
+        return _facingDirection;
+    }
 
     #region Gravity and Velocity
 
@@ -258,9 +264,14 @@ public class CharacterController : MonoBehaviour
     private void Walk()
     {
         if (_inputHorizontal != 0)
+        {
             _horizontalSpeed = Mathf.MoveTowards(_horizontalSpeed, _maxMove * _inputHorizontal, _acceleration * Time.fixedDeltaTime);
+            _facingDirection = _inputHorizontal > 0 ? 1 : -1;
+        }
         else
+        {
             _horizontalSpeed = Mathf.MoveTowards(_horizontalSpeed, 0, _deceleration * Time.fixedDeltaTime);
+        }
     }
 
     #endregion
