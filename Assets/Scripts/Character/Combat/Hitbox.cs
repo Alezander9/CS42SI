@@ -67,6 +67,22 @@ public class Hitbox
     }
     
     /// <summary>
+    /// Gets the world-space bounds of this hitbox.
+    /// </summary>
+    public Bounds GetWorldBounds()
+    {
+        Vector2 center = GetWorldPosition();
+        Vector2 size = Size;
+        
+        if (Shape == HitboxShape.Circle)
+        {
+            size = new Vector2(Size.x * 2, Size.x * 2);
+        }
+        
+        return new Bounds(center, size);
+    }
+    
+    /// <summary>
     /// Checks for collisions and returns NEW hits (excludes already-hit targets).
     /// Returns empty array if nothing new was hit.
     /// </summary>

@@ -281,6 +281,20 @@ public class WorldManager : MonoBehaviour
         return false;
     }
     
+    /// <summary>
+    /// Inflict damage to tiles within a world-space area.
+    /// </summary>
+    public void InflictTileDamage(Bounds worldBounds, int damage)
+    {
+        foreach (var room in _loadedRooms.Values)
+        {
+            if (room.WorldBounds.Intersects(worldBounds))
+            {
+                room.InflictTileDamage(worldBounds, damage);
+            }
+        }
+    }
+    
     private void OnDrawGizmos()
     {
         if (_loadedRooms == null || _loadedRooms.Count == 0)

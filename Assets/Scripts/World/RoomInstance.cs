@@ -121,6 +121,47 @@ public class RoomInstance
             Object.Destroy(RootObject);
         }
     }
+    
+    /// <summary>
+    /// Inflict damage to tiles within a world-space area.
+    /// </summary>
+    public void InflictTileDamage(Bounds worldBounds, int damage)
+    {
+        Vector2Int[] tiles = GetTilesIntersectingArea(worldBounds);
+        
+        foreach (var tile in tiles)
+        {
+            Generator.DamageTile(tile.x, tile.y, damage);
+        }
+    }
+    
+    /// <summary>
+    /// Get grid coordinates of all tiles that intersect a world-space bounds.
+    /// </summary>
+    private Vector2Int[] GetTilesIntersectingArea(Bounds worldBounds)
+    {
+        // Get the tilemap reference
+        var tilemap = Generator.GetComponent<UnityEngine.Tilemaps.Tilemap>();
+        if (tilemap == null)
+            return new Vector2Int[0];
+        
+        // Convert world bounds corners to grid cells
+        Vector3Int minCell = tilemap.WorldToCell(worldBounds.min);
+        Vector3Int maxCell = tilemap.WorldToCell(worldBounds.max);
+        
+        // Collect all tiles in this range
+        var tiles = new System.Collections.Generic.List<Vector2Int>();
+        
+        for (int x = minCell.x; x <= maxCell.x; x++)
+        {
+            for (int y = minCell.y; y <= maxCell.y; y++)
+            {
+                tiles.Add(new Vector2Int(x, y));
+            }
+        }
+        
+        return tiles.ToArray();
+    }
 }
 
 

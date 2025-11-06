@@ -79,21 +79,17 @@ public class AttackManager : MonoBehaviour
         );
         
         // Get corresponding attack behavior
-        if (_attackMap.TryGetValue(attackInput, out IAttackBehavior attack))
+        if (!_attackMap.TryGetValue(attackInput, out IAttackBehavior attack))
+            return;
+        
+        if (!attack.CanExecute(_context))
+            return;
+        
+        // Execute attack
+        if (attack.Execute(_context))
         {
-            if (attack.CanExecute(_context))
-            {
-                // Execute attack
-                if (attack.Execute(_context))
-                {
-                    _currentAttack = attack;
-                    _attackFrameCounter = 0;
-                }
-            }
-        }
-        else
-        {
-            Debug.Log($"No attack mapped for: {attackInput.GetAttackName()}");
+            _currentAttack = attack;
+            _attackFrameCounter = 0;
         }
     }
     

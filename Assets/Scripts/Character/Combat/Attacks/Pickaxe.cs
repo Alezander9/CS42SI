@@ -32,7 +32,7 @@ public class PickaxeGroundedNeutral : IAttackBehavior
             Shape = HitboxShape.Capsule,
             LocalOffset = new Vector2(0.8f, 0.2f),
             Size = new Vector2(PickaxeData.HitboxRadius, 1.2f),
-            CollisionLayers = LayerMask.GetMask("Default")
+            CollisionLayers = LayerMask.GetMask("Ground")
         };
         
         return true;
@@ -48,7 +48,7 @@ public class PickaxeGroundedNeutral : IAttackBehavior
             Collider2D[] hits = _hitbox.Check();
             foreach (var hit in hits)
             {
-                OnHit(hit, context);
+                OnHit(hit, context, _hitbox);
             }
             _hitbox.ShowDebugVisual();
         }
@@ -63,10 +63,18 @@ public class PickaxeGroundedNeutral : IAttackBehavior
         }
     }
     
-    private void OnHit(Collider2D target, AttackContext context)
+    private void OnHit(Collider2D target, AttackContext context, Hitbox hitbox)
     {
-        // TODO: Apply damage
-        // TODO: Apply knockback
+        var tilemap = target.GetComponent<UnityEngine.Tilemaps.Tilemap>(); // Check if the target has a tilemap component
+        
+        if (tilemap != null) // If the target has a tilemap component, inflict tile damage
+        {
+            WorldManager worldManager = UnityEngine.Object.FindObjectOfType<WorldManager>();
+            if (worldManager != null)
+            {
+                worldManager.InflictTileDamage(hitbox.GetWorldBounds(), 10);
+            }
+        }
     }
 }
 
