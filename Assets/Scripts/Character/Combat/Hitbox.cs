@@ -24,7 +24,7 @@ public class Hitbox
     
     // Static debug flag (can be toggled globally)
     public static bool ShowDebugVisuals = false;
-    public static Color DebugVisualColor = Color.red;
+    public static Color DebugVisualColor = new Color(1f, 0f, 0f, 0.5f); // Red with 50% transparency
     
     private Transform _owner;
     private int _facingDirection;
@@ -195,10 +195,10 @@ public class Hitbox
             var renderer = visual.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                Material hitboxMat = Resources.Load<Material>("Materials/HitboxMaterial");
-                if (hitboxMat != null)
+                Shader shader = Shader.Find("Sprites/Default");
+                if (shader != null)
                 {
-                    Material mat = new Material(hitboxMat);
+                    Material mat = new Material(shader);
                     mat.color = DebugVisualColor;
                     renderer.material = mat;
                 }
