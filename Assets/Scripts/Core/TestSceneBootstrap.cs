@@ -278,26 +278,46 @@ public class TestSceneBootstrap : MonoBehaviour
         if (attackManager == null)
             return;
         
-        // Register pickaxe swing for grounded neutral light
+        // Register all grounded pickaxe attacks
         attackManager.RegisterAttack(
             new AttackInput(GroundState.Grounded, AttackDirection.Neutral, AttackType.Light),
-            new PickaxeSwing()
+            new PickaxeGroundedNeutral()
         );
         
-        // Register other test attacks
         attackManager.RegisterAttack(
             new AttackInput(GroundState.Grounded, AttackDirection.Side, AttackType.Light),
-            new TestAttackBehavior("Grounded Side Light")
+            new PickaxeGroundedSide()
         );
         
         attackManager.RegisterAttack(
             new AttackInput(GroundState.Grounded, AttackDirection.Up, AttackType.Light),
-            new TestAttackBehavior("Grounded Up Light")
+            new PickaxeGroundedUp()
         );
         
         attackManager.RegisterAttack(
+            new AttackInput(GroundState.Grounded, AttackDirection.Down, AttackType.Light),
+            new PickaxeGroundedDown()
+        );
+        
+        // TEMPORARY: Using grounded attacks as placeholder for air attacks
+        attackManager.RegisterAttack(
             new AttackInput(GroundState.Airborne, AttackDirection.Neutral, AttackType.Light),
-            new TestAttackBehavior("Airborne Neutral Light")
+            new PickaxeGroundedNeutral()  // TODO: Replace with proper air attack
+        );
+        
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Airborne, AttackDirection.Side, AttackType.Light),
+            new PickaxeGroundedSide()  // TODO: Replace with proper air attack
+        );
+        
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Airborne, AttackDirection.Up, AttackType.Light),
+            new PickaxeGroundedUp()  // TODO: Replace with proper air attack
+        );
+        
+        attackManager.RegisterAttack(
+            new AttackInput(GroundState.Airborne, AttackDirection.Down, AttackType.Light),
+            new PickaxeGroundedDown()  // TODO: Replace with proper air attack
         );
     }
 }
