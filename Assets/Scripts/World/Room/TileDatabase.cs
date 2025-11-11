@@ -37,7 +37,7 @@ public static class TileDatabase
         {
             Type = TileType.Stone,
             Name = "Stone",
-            MaxHealth = 200,
+            MaxHealth = 250,
             IsDestructible = true,
             HasCollision = true,
             VisualTile = null,  // Assign in RoomGenerator
