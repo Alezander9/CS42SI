@@ -140,16 +140,17 @@ public class RoomInstance
     /// </summary>
     private Vector2Int[] GetTilesIntersectingArea(Bounds worldBounds)
     {
-        // Get the tilemap reference
-        var tilemap = Generator.GetComponent<UnityEngine.Tilemaps.Tilemap>();
+        var tilemap = Generator.GetComponentInChildren<UnityEngine.Tilemaps.Tilemap>();
         if (tilemap == null)
             return new Vector2Int[0];
         
-        // Convert world bounds corners to grid cells
-        Vector3Int minCell = tilemap.WorldToCell(worldBounds.min);
-        Vector3Int maxCell = tilemap.WorldToCell(worldBounds.max);
+        // Convert world bounds to grid cells (match tilemap's Z coordinate)
+        Vector3 minWorld = new Vector3(worldBounds.min.x, worldBounds.min.y, tilemap.transform.position.z);
+        Vector3 maxWorld = new Vector3(worldBounds.max.x, worldBounds.max.y, tilemap.transform.position.z);
         
-        // Collect all tiles in this range
+        Vector3Int minCell = tilemap.WorldToCell(minWorld);
+        Vector3Int maxCell = tilemap.WorldToCell(maxWorld);
+        
         var tiles = new System.Collections.Generic.List<Vector2Int>();
         
         for (int x = minCell.x; x <= maxCell.x; x++)

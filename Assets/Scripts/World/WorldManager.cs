@@ -288,11 +288,17 @@ public class WorldManager : MonoBehaviour
     {
         foreach (var room in _loadedRooms.Values)
         {
-            if (room.WorldBounds.Intersects(worldBounds))
+            if (Intersects2D(room.WorldBounds, worldBounds))
             {
                 room.InflictTileDamage(worldBounds, damage);
             }
         }
+    }
+    
+    private bool Intersects2D(Bounds a, Bounds b)
+    {
+        return a.min.x <= b.max.x && a.max.x >= b.min.x &&
+               a.min.y <= b.max.y && a.max.y >= b.min.y;
     }
     
     private void OnDrawGizmos()

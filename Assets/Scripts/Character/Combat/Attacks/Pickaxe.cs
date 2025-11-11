@@ -65,9 +65,9 @@ public class PickaxeGroundedNeutral : IAttackBehavior
     
     private void OnHit(Collider2D target, AttackContext context, Hitbox hitbox)
     {
-        var tilemap = target.GetComponent<UnityEngine.Tilemaps.Tilemap>(); // Check if the target has a tilemap component
+        var tilemap = target.GetComponent<UnityEngine.Tilemaps.Tilemap>();
         
-        if (tilemap != null) // If the target has a tilemap component, inflict tile damage
+        if (tilemap != null)
         {
             WorldManager worldManager = UnityEngine.Object.FindObjectOfType<WorldManager>();
             if (worldManager != null)
