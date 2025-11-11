@@ -9,16 +9,33 @@ public class TerrainDamageSystem
     private TileType[,] _grid;
     private Dictionary<Vector2Int, TileDamage> _damagedTiles;
     private Tilemap _tilemap;
+    private Tilemap _damageTilemap;
+    private Tile[] _damageTiles;
     private int _width;
     private int _height;
     
-    public TerrainDamageSystem(TileType[,] grid, Tilemap tilemap, int width, int height)
+    public TerrainDamageSystem(TileType[,] grid, Tilemap tilemap, Tilemap damageTilemap, Sprite[] damageStageSprites, int width, int height)
     {
         _grid = grid;
         _tilemap = tilemap;
+        _damageTilemap = damageTilemap;
         _width = width;
         _height = height;
         _damagedTiles = new Dictionary<Vector2Int, TileDamage>();
+        
+        // Create tile instances for each damage stage
+        if (damageStageSprites != null && damageStageSprites.Length > 0)
+        {
+            _damageTiles = new Tile[damageStageSprites.Length];
+            for (int i = 0; i < damageStageSprites.Length; i++)
+            {
+                if (damageStageSprites[i] != null)
+                {
+                    _damageTiles[i] = ScriptableObject.CreateInstance<Tile>();
+                    _damageTiles[i].sprite = damageStageSprites[i];
+                }
+            }
+        }
     }
     
     /// <summary>
@@ -57,12 +74,15 @@ public class TerrainDamageSystem
             _grid[x, y] = TileType.Air;
             _damagedTiles.Remove(pos);
             UpdateTileVisual(x, y, TileType.Air);
+            UpdateDamageVisual(x, y, 0f);
             return true;
         }
         else
         {
             // Update damage
             _damagedTiles[pos] = damage;
+            float damagePercent = (float)damage.CurrentDamage / maxHealth;
+            UpdateDamageVisual(x, y, damagePercent);
             return false;
         }
     }
@@ -105,6 +125,37 @@ public class TerrainDamageSystem
         {
             Vector2Int pos = new Vector2Int(damage.X, damage.Y);
             _damagedTiles[pos] = damage;
+            
+            // Restore damage visual
+            int maxHealth = TileDatabase.GetMaxHealth(damage.OriginalType);
+            float damagePercent = (float)damage.CurrentDamage / maxHealth;
+            UpdateDamageVisual(damage.X, damage.Y, damagePercent);
+        }
+    }
+    
+    /// <summary>
+    /// Update the damage visual overlay for a tile based on damage percentage.
+    /// </summary>
+    private void UpdateDamageVisual(int x, int y, float damagePercent)
+    {
+        if (_damageTilemap == null || _damageTiles == null || _damageTiles.Length == 0)
+            return;
+        
+        Vector3Int pos = new Vector3Int(x, y, 0);
+        
+        if (damagePercent <= 0f)
+        {
+            // No damage, clear overlay
+            _damageTilemap.SetTile(pos, null);
+        }
+        else
+        {
+            // Map damage percent (0.0 to 1.0) to stage index (0 to 9)
+            int stageIndex = Mathf.FloorToInt(damagePercent * _damageTiles.Length);
+            stageIndex = Mathf.Clamp(stageIndex, 0, _damageTiles.Length - 1);
+            
+            // Set the appropriate damage tile
+            _damageTilemap.SetTile(pos, _damageTiles[stageIndex]);
         }
     }
     

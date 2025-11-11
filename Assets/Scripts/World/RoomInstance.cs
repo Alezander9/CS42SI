@@ -112,6 +112,7 @@ public class RoomInstance
     public void UpdateWorldOffset(Vector3 newOffset)
     {
         WorldOffset = newOffset;
+        WorldBounds = Generator.GetWorldBounds();
     }
     
     public void Destroy()

@@ -132,7 +132,7 @@ public class PickaxeGroundedUp : IAttackBehavior
         _hitbox = new Hitbox(context.Transform, context.FacingDirection)
         {
             Shape = HitboxShape.Capsule,
-            LocalOffset = new Vector2(0.3f, 1.2f),
+            LocalOffset = new Vector2(0.35f, 1.2f),
             Size = new Vector2(PickaxeData.HitboxRadius, 1.0f),
             CollisionLayers = LayerMask.GetMask("Ground")
         };

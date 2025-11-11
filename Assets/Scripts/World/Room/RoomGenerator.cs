@@ -34,8 +34,12 @@ public class RoomGenerator : MonoBehaviour
     
     [Header("Tile References")]
     [SerializeField] private Tilemap _tilemap;
+    [SerializeField] private Tilemap _damageTilemap;
     [SerializeField] private TileBase _baseGroundTile;  // Single white square tile for all ground types
     [SerializeField] private GameObject _portalPrefab;
+    
+    [Header("Damage Visuals")]
+    [SerializeField] private Sprite[] _damageStageSprites = new Sprite[10];  // 10 stages of damage sprites
     
     // Grid data
     private TileType[,] _originalGrid;  // As-generated (for delta comparison)
@@ -89,7 +93,7 @@ public class RoomGenerator : MonoBehaviour
         }
         
         // Phase 7: Initialize damage system
-        _damageSystem = new TerrainDamageSystem(_grid, _tilemap, _roomWidth, _roomHeight);
+        _damageSystem = new TerrainDamageSystem(_grid, _tilemap, _damageTilemap, _damageStageSprites, _roomWidth, _roomHeight);
         
         if (savedState != null && savedState.DamagedTiles != null)
         {
